@@ -1,38 +1,42 @@
 -- luabits by zoe
 -- 8/14/2018
 
-local logBase2 = math.log(2)
-
+local natLog2 = math.log(2)
 local function NumberBitsForRepresentingUnsignedInt(integer)
+	-- Returns the number of bits needed to represent a given integer
 	integer = math.floor(integer)
-	local bits = math.ceil(math.log(integer+1)/logBase2)
-	return math.log(integer)/logBase2, bits, (2^bits)-1
+	local bits = math.ceil(math.log(integer+1)/natLog2)
+	return math.log(integer)/natLog2, bits, (2^bits)-1
 end
 
 local function IntegerToBitArray(integer, bits)
+	-- Converts an integer into a (backwards) array of bits
 	local array = {}
 	for i = bits, 1, -1 do
 		local bitNumber = 2^i-1
 		if bitNumber >= integer then
-			table.insert(array, 1, true)
+			array[#array+1] = true
 			integer = integer - bitNumber
 		else
-			table.insert(array, 1, false)
+			array[#array+1] = false
 		end
 	end
 end
 
 local function BitArrayToInteger(array)
+	-- Turns an array of bits into an integer
 	local value = 0
-	for i = 1, array do
+	local length = #array
+	for i = 1, length do
 		local bit = array[i]
 		if bit then
-			value = value + 2^(i-1)
+			value = value + 2^(length-i)
 		end
 	end
 end
 
 local function appendBitArray(array, appendArray)
+	-- Connects appendArray to the end of array
 	for i = 1, #appendArray do
 		array[#array+1] = appendArray[i]
 	end
@@ -40,6 +44,7 @@ local function appendBitArray(array, appendArray)
 end
 
 local function SerializeBitArrays(arrays, use8BitCharacters)
+	--- This function will chunk up a bit array and encode it into characters
 	local charSize = use8BitCharacters and 8 or 7
 	local charValue = 0
 	local bitPosition = 1
@@ -66,141 +71,49 @@ local function SerializeBitArrays(arrays, use8BitCharacters)
 	return serializedArray
 end
 
-local function DecodeSerializedArray(array, specification)
+local function DeserializeBitArray(serial, bits)
+	--- Turns a string of serialized bits back into a bit array
 	local bits = {}
 	for char in string.gsub(array, ".") do
-		local newBits = BitArrayToInteger(string.byte(char))
+		local newBits = IntegerToBitArray(string.byte(char), bits)
 		appendBitArray(bits, newBits)
 	end
-	--[[for ind, spec do
-
-	end]]
-	if specification.Type == "Dictionary" then
-		local dict = {}
-		for index, value in pairs(specification.Values) do
-			local int = string.byte
-		end
-	elseif specification.Type == "List" then
-
-	elseif specification.Type == "Integer" then
-	end
+	return bits
 end
 
-local spec = {
-	['Type']   = "Dictionary";
-	['Values'] = {
-		{
-			['Key']       = "Size";
-			['Type']      = "Dictionary";
-			['Size']      = 33;
-			['Values']    = {
-				{
-					['Key']  = "X";
-					['Type'] = "Integer";
-					['Size'] = 11;
-				};{
-					['Key']  = "Y";
-					['Type'] = "Integer";
-					['Size'] = 11;
-				};{
-					['Key']  = "Z";
-					['Type'] = "Integer";
-					['Size'] = 11;
-				};
-			}
-		};{
-			['Key']    = "Pallette";
-			['Type']   = "List";
-			['Size']   = 336;
-			['Values'] = {
-				{
-					['Type']      = "Dictionary";
-					['Size']      = 21;
-					['Repeating'] = 16;
-					['Values']    = {
-						{
-							['Key']  = "Red";
-							['Type'] = "Integer";
-							['Size'] = 7;
-						};{
-							['Key']  = "Green";
-							['Type'] = "Integer";
-							['Size'] = 7;
-						};{
-							['Key']  = "Blue";
-							['Type'] = "Integer";
-							['Size'] = 7;
-						};
-					}
-				}
-			}
-		};{
-			['Key']  = "Voxels";
-			['Type'] = "List";
-			['Values'] = {
-				{
-					['Type']        = "Dictionary";
-					['Size']        = "Variable";
-					['RepeatToEnd'] = true;
-					['Values']      = {
-						{
-							['Key']    = "StartPosition";
-							['Type']   = "Dictionary";
-							['Size']   = "Variable";
-							['Values'] = {
-								{
-									['Key'] = "X";
-									['Type'] = "Integer";
-									['Size'] = "Variable";
-								};{
-									['Key'] = "Y";
-									['Type'] = "Integer";
-									['Size'] = "Variable";
-								};{
-									['Key'] = "Z";
-									['Type'] = "Integer";
-									['Size'] = "Variable";
-								}
-							}
-						};{
-							['Key'] = "EndPosition";
-							['Type'] = "Dictionary";
-							['Size'] = "Variable";
-							['Values'] = {
-								{
-									['Key'] = "X";
-									['Type'] = "Integer";
-									['Size'] = "Variable";
-								};
-								{
-									['Key'] = "Y";
-									['Type'] = "Integer";
-									['Size'] = "Variable";
-								};
-								{
-									['Key'] = "Z";
-									['Type'] = "Integer";
-									['Size'] = "Variable";
-								}
-							}
-						};{
-							['Key'] = "Material";
-							['Type'] = "Integer";
-							['Size'] = 2;
-						};{
-							['Key'] = "IsBreakable";
-							['Type'] = "Boolean";
-							['Size'] = 1;
-						};{
-							['Key'] = "HasGravity";
-							['Type'] = "Boolean";
-							['Size'] = 1;
-						}
-					}
-				}
-			}
-		}
-	}
-}
-
---- Type up the spec
+local function DecodeBitArray(array, spec, table, sizeFunctions)
+	if not root then
+		print("No root")
+	end
+	local root = root or {}
+	local table = table or root
+	if spec.Type == "Table" then
+		for i = 1, #spec.Values do
+			local value = spec.Values[i]
+			DecodeBitArray(array, value, table, sizeFunctions)
+		end
+	elseif spec.Type == "Integer" then
+		if spec.Size then
+			local intSize do
+				if typeof(spec.Size) == "number" then
+					intSize = spec.Size
+				elseif typeof(spec.Size) == "string" then
+					intSize = sizeFunctions[spec.Size](root)
+				else
+					error("DecodeBitArray: Incorrect given for int value ".. (spec.Key or "[keyless]") ..", must be string or integer") 
+				end
+			end
+			local integerBits = {}
+			for i = 1, intSize do
+				integerBits[i] = array[1]
+				table.remove(array, 1)
+			end
+			table[spec.Key or #table+1] = BitArrayToInteger(integerBits)
+		else
+			error("DecodeBitArray: No or size given for int value ".. (spec.Key or "[keyless]"))
+		end
+	elseif spec.Type == "Boolean" then
+		table[spec.Key or #table+1] = array[1]
+		table.remove(array, 1)
+	end
+end
