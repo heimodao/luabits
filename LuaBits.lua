@@ -1,51 +1,62 @@
--- luabits by zoe
--- 8/14/2018
+--[[
+	The luabits module provides an API for creating and serializing binary data
+	formats with the intention of compressing data for easier storage and
+	transportation.
+]]
 
-local natLog2 = math.log(2)
-local function NumberBitsForRepresentingUnsignedInt(integer)
-	-- Returns the number of bits needed to represent a given integer
+local NAT_LOG_2 = math.log(2)
+
+-- Returns the number of bits needed to represent an integer in binary format.
+local function bitsToRepresentInt(integer)
 	integer = math.floor(integer)
-	local bits = math.ceil(math.log(integer+1)/natLog2)
-	return math.log(integer)/natLog2, bits, (2^bits)-1
+	local bits = math.ceil(math.log(integer+1)/NAT_LOG_2)
+	return math.log(integer)/NAT_LOG_2, bits, (2^bits)-1
 end
 
-local function IntegerToBitArray(integer, bits)
-	-- Converts an integer into a (backwards) array of bits
-	local array = {}
+-- Converts an integer into a sequence of bits, stored as a string
+local function integerToBitString(integer, bits)
+	if not bits then
+		bits = bitsToRepresentInt(integer)
+	end
+	local bitString = ""
 	for i = bits, 1, -1 do
 		local bitNumber = 2^i-1
 		if bitNumber >= integer then
-			array[#array+1] = true
+			bitString = "1"..bitString
 			integer = integer - bitNumber
 		else
 			array[#array+1] = false
+			bitString = "0"..bitString
 		end
 	end
+	return bitString
 end
 
-local function BitArrayToInteger(array)
-	-- Turns an array of bits into an integer
+local function bitStringToInteger(bitString)
+	-- Turns a string of bits into an integer
 	local value = 0
-	local length = #array
-	for i = 1, length do
-		local bit = array[i]
-		if bit then
-			value = value + 2^(length-i)
+	local length = string.len(bitString)
+	for index, bit in string.gmatch(serial, ".") do
+		length = length - 1 
+		if bit == "1" then
+			value = value + 2^(length)
 		end
 	end
+	return value
 end
 
-local function appendBitArray(array, appendArray)
-	-- Connects appendArray to the end of array
-	for i = 1, #appendArray do
-		array[#array+1] = appendArray[i]
-	end
-	return array
-end
-
-local function SerializeBitArrays(arrays, use8BitCharacters)
-	--- This function will chunk up a bit array and encode it into characters
-	local charSize = use8BitCharacters and 8 or 7
+local function SerializeBitArrays(arrays, forDatastore)
+	local charSize = forDatastore and 6 or 8
+	 --[[ 
+		 When serializing for DataStores, we can only encoded ASCII characters between
+		 the values 0-127. Because of quirks with how JSON encodes certain control
+		 characters, 36 of those characters use up to 6 characters in the datastore to
+		 encode a single character, meaning 7 bits have the potential to take up to 42
+		 bits of space. Thus, it turns out that it's more efficient to forgo 7-bit
+		 serialization into all valid 128 ASCII character and use only 6-bit
+		 serialization instead.
+		 https://devforum.roblox.com/t/text-compression/163637/6
+	 ]]
 	local charValue = 0
 	local bitPosition = 1
 	local serializedArray = ""
@@ -55,8 +66,18 @@ local function SerializeBitArrays(arrays, use8BitCharacters)
 				charValue = charValue+2^(bitPosition-1)
 			end
 			if bitPosition == charSize then
-				serializedArray  = serializedArray..string.char(charValue)
-				charValue   = 0
+				if forDatastore then
+					charValue = charValue + 35
+					if charValue >= 92 then
+						-- We skip 92 because the backslash character (92) is encoded in JSON
+						--datastores as 2 characters, "\\", an escape backslash, followed by an
+						--actual backslash. Characters 1-31 and 34 are also encoded as more than
+						--one character, so we start on character 35.
+						charValue = charValue + 1
+					end
+				end
+				serializedArray = serializedArray..string.char(charValue+offset)
+				charValue = 0
 				bitPosition = 1
 			else
 				bitPosition = bitPosition + 1
@@ -71,26 +92,32 @@ local function SerializeBitArrays(arrays, use8BitCharacters)
 	return serializedArray
 end
 
-local function DeserializeBitArray(serial, bits)
-	--- Turns a string of serialized bits back into a bit array
-	local bits = {}
-	for char in string.gsub(array, ".") do
-		local newBits = IntegerToBitArray(string.byte(char), bits)
-		appendBitArray(bits, newBits)
+local function DeserializeBitArray(serial, forDatastore)
+	local numberBits = forDatastore and 6 or 8
+	local bits = ""
+	for char in string.gmatch(serial, ".") do
+		local integer = string.byte(char)
+		if forDatastore and integer >= 93 then
+			integer = integer - 1
+			-- We do this, because if the serialized integer is 92 or greater, it is
+			-- stored as 1 greater than its actual value in order to skip ASCII character
+			-- 92. (see above comments)
+		end
+		bits = bits..integerToBitString(integer, numberBits)
 	end
 	return bits
 end
 
-local function DecodeBitArray(array, spec, table, sizeFunctions)
+local function DecodeBitArray(array, spec, sizeCallbacks, container)
 	if not root then
 		print("No root")
 	end
 	local root = root or {}
-	local table = table or root
+	local table = container or root
 	if spec.Type == "Table" then
 		for i = 1, #spec.Values do
 			local value = spec.Values[i]
-			DecodeBitArray(array, value, table, sizeFunctions)
+			DecodeBitArray(array, value, sizeCallbacks, container)
 		end
 	elseif spec.Type == "Integer" then
 		if spec.Size then
@@ -98,9 +125,24 @@ local function DecodeBitArray(array, spec, table, sizeFunctions)
 				if typeof(spec.Size) == "number" then
 					intSize = spec.Size
 				elseif typeof(spec.Size) == "string" then
-					intSize = sizeFunctions[spec.Size](root)
+					if not sizeCallbacks then
+						error("LuaBits DecodeBitArray: Callbacks table is undefined")
+					end
+					local callback = sizeCallbacks[spec.Size]
+					if callback then
+						if typeof(callback) == "function" then
+							intSize = callback(root)
+							sizeCallbacks[spec.Size] = intSize
+						elseif typeof(callback) == "number" then
+							intSize = callback
+						else
+							error("LuaBits DecodeBitArray: Incorrect type given for callback ''"..spec.Size.. "', Value must be a function")
+						end
+					else
+						error("LuaBits DecodeBitArray: Callback '"..spec.Size.."' is undefined.")
+					end
 				else
-					error("DecodeBitArray: Incorrect given for int value ".. (spec.Key or "[keyless]") ..", must be string or integer") 
+					error("LuaBits DecodeBitArray: Incorrect size given for int value ''".. (spec.Key or "[keyless]") .."', must be callback string or integer")
 				end
 			end
 			local integerBits = {}
