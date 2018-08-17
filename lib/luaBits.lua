@@ -25,19 +25,18 @@ local function integerToBitString(integer, bits)
 			bitString = "1"..bitString
 			integer = integer - bitNumber
 		else
-			array[#array+1] = false
 			bitString = "0"..bitString
 		end
 	end
 	return bitString
 end
 
+-- Converts a sequence of bits back into an integer
 local function bitStringToInteger(bitString)
-	-- Turns a string of bits into an integer
 	local value = 0
 	local length = string.len(bitString)
-	for index, bit in string.gmatch(serial, ".") do
-		length = length - 1 
+	for bit in string.gmatch(bitString, ".") do
+		length = length - 1
 		if bit == "1" then
 			value = value + 2^(length)
 		end
@@ -45,9 +44,9 @@ local function bitStringToInteger(bitString)
 	return value
 end
 
-local function SerializeBitArrays(arrays, forDatastore)
+local function compressBitString(bitString, forDatastore)
 	local charSize = forDatastore and 6 or 8
-	 --[[ 
+	 --[[
 		 When serializing for DataStores, we can only encoded ASCII characters between
 		 the values 0-127. Because of quirks with how JSON encodes certain control
 		 characters, 36 of those characters use up to 6 characters in the datastore to
@@ -76,7 +75,7 @@ local function SerializeBitArrays(arrays, forDatastore)
 						charValue = charValue + 1
 					end
 				end
-				serializedArray = serializedArray..string.char(charValue+offset)
+				serializedArray = serializedArray..string.char(charValue+35)
 				charValue = 0
 				bitPosition = 1
 			else
@@ -92,10 +91,10 @@ local function SerializeBitArrays(arrays, forDatastore)
 	return serializedArray
 end
 
-local function DeserializeBitArray(serial, forDatastore)
+local function decompressBitString(bitString, forDatastore)
 	local numberBits = forDatastore and 6 or 8
 	local bits = ""
-	for char in string.gmatch(serial, ".") do
+	for char in string.gmatch(bitString, ".") do
 		local integer = string.byte(char)
 		if forDatastore and integer >= 93 then
 			integer = integer - 1
@@ -108,17 +107,19 @@ local function DeserializeBitArray(serial, forDatastore)
 	return bits
 end
 
-local function DecodeBitArray(array, spec, sizeCallbacks, container)
+local function deserializeBitArray(bitString, spec, sizeCallbacks, container, position)
 	if not root then
 		print("No root")
 	end
 	local root = root or {}
 	local table = container or root
+	local position = position or 1
 	if spec.Type == "Table" then
 		for i = 1, #spec.Values do
 			local value = spec.Values[i]
-			DecodeBitArray(array, value, sizeCallbacks, container)
+			position = deserializeBitArray(bitString, value, sizeCallbacks, container, position)
 		end
+		return position
 	elseif spec.Type == "Integer" then
 		if spec.Size then
 			local intSize do
@@ -144,18 +145,16 @@ local function DecodeBitArray(array, spec, sizeCallbacks, container)
 				else
 					error("LuaBits DecodeBitArray: Incorrect size given for int value ''".. (spec.Key or "[keyless]") .."', must be callback string or integer")
 				end
+				local integerBits = string.sub(bitString, position, position+intSize-1)
+				table[spec.Key or #table+1] = bitStringToInteger(integerBits)
+				return position + intSize
 			end
-			local integerBits = {}
-			for i = 1, intSize do
-				integerBits[i] = array[1]
-				table.remove(array, 1)
-			end
-			table[spec.Key or #table+1] = BitArrayToInteger(integerBits)
 		else
 			error("DecodeBitArray: No or size given for int value ".. (spec.Key or "[keyless]"))
 		end
 	elseif spec.Type == "Boolean" then
-		table[spec.Key or #table+1] = array[1]
-		table.remove(array, 1)
+		local bit = string.sub(bitString, position)
+		table[spec.Key or #table+1] = bit == "1"
+		return position + 1
 	end
 end

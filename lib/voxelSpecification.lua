@@ -121,5 +121,3 @@ local SizeFunctions = {
 		return NumberBitsForRepresentingUnsignedInt(data.MapSize.Z)
 	end;
 }
-
---- Type up the spec
