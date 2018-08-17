@@ -107,7 +107,7 @@ local function decompressBitString(bitString, forDatastore)
 	return bits
 end
 
-local function deserializeBitArray(bitString, spec, sizeCallbacks, container, position)
+local function deserializeBitString(bitString, spec, sizeCallbacks, container, position)
 	if not root then
 		print("No root")
 	end
@@ -158,3 +158,14 @@ local function deserializeBitArray(bitString, spec, sizeCallbacks, container, po
 		return position + 1
 	end
 end
+
+local luaBits = {
+	bitsToRepresentInt   = bitsToRepresentInt;
+	integerToBitString   = integerToBitString;
+	bitStringToInteger   = bitStringToInteger;
+	compressBitString    = compressBitString;
+	decompressBitString  = decompressBitString;
+	deserializeBitString = deserializeBitString;
+}
+
+return luaBits
