@@ -58,37 +58,35 @@ local function compressBitString(bitString, forDatastore)
 	 ]]
 	local charValue = 0
 	local bitPosition = 1
-	local serializedArray = ""
-	for _, array in pairs(arrays) do
-		for _, bit in pairs(array) do
-			if bit then
-				charValue = charValue+2^(bitPosition-1)
-			end
-			if bitPosition == charSize then
-				if forDatastore then
-					charValue = charValue + 35
-					if charValue >= 92 then
-						-- We skip 92 because the backslash character (92) is encoded in JSON
-						--datastores as 2 characters, "\\", an escape backslash, followed by an
-						--actual backslash. Characters 1-31 and 34 are also encoded as more than
-						--one character, so we start on character 35.
-						charValue = charValue + 1
-					end
+	local compressedString = ""
+	for bit in string.gmatch(bitString, ".") do
+		if bit == "1" then
+			charValue = charValue+2^(bitPosition-1)
+		end
+		if bitPosition == charSize then
+			if forDatastore then
+				charValue = charValue + 35
+				if charValue >= 92 then
+					-- We skip 92 because the backslash character (92) is encoded in JSON
+					--datastores as 2 characters, "\\", an escape backslash, followed by an
+					--actual backslash. Characters 1-31 and 34 are also encoded as more than
+					--one character, so we start on character 35.
+					charValue = charValue + 1
 				end
-				serializedArray = serializedArray..string.char(charValue+35)
-				charValue = 0
-				bitPosition = 1
-			else
-				bitPosition = bitPosition + 1
 			end
+			compressedString = compressedString..string.char(charValue+35)
+			charValue = 0
+			bitPosition = 1
+		else
+			bitPosition = bitPosition + 1
 		end
 	end
 	if charValue > 0 then
 		local remainingBits = charSize-bitPosition
 		charValue = charValue * (2^remainingBits) -- Shifts bits #remainingBits places left, i.e. appends #remainingBits zeroes to the end, adding enough bits to even out the very last value
-		serializedArray = serializedArray..string.char(charValue)
+		compressedString = compressedString..string.char(charValue)
 	end
-	return serializedArray
+	return compressedString
 end
 
 local function decompressBitString(bitString, forDatastore)
@@ -117,7 +115,7 @@ local function deserializeBitString(bitString, spec, sizeCallbacks, container, p
 	if spec.Type == "Table" then
 		for i = 1, #spec.Values do
 			local value = spec.Values[i]
-			position = deserializeBitArray(bitString, value, sizeCallbacks, container, position)
+			position = deserializeBitString(bitString, value, sizeCallbacks, container, position)
 		end
 		return position
 	elseif spec.Type == "Integer" then
@@ -127,7 +125,7 @@ local function deserializeBitString(bitString, spec, sizeCallbacks, container, p
 					intSize = spec.Size
 				elseif typeof(spec.Size) == "string" then
 					if not sizeCallbacks then
-						error("LuaBits DecodeBitArray: Callbacks table is undefined")
+						error("LuaBits deserializeBitString: Callbacks table is undefined")
 					end
 					local callback = sizeCallbacks[spec.Size]
 					if callback then
@@ -137,20 +135,20 @@ local function deserializeBitString(bitString, spec, sizeCallbacks, container, p
 						elseif typeof(callback) == "number" then
 							intSize = callback
 						else
-							error("LuaBits DecodeBitArray: Incorrect type given for callback ''"..spec.Size.. "', Value must be a function")
+							error("LuaBits deserializeBitString: Incorrect type given for callback ''"..spec.Size.. "', Value must be a function")
 						end
 					else
-						error("LuaBits DecodeBitArray: Callback '"..spec.Size.."' is undefined.")
+						error("LuaBits deserializeBitString: Callback '"..spec.Size.."' is undefined.")
 					end
 				else
-					error("LuaBits DecodeBitArray: Incorrect size given for int value ''".. (spec.Key or "[keyless]") .."', must be callback string or integer")
+					error("LuaBits deserializeBitString: Incorrect size given for int value ''".. (spec.Key or "[keyless]") .."', must be callback string or integer")
 				end
 				local integerBits = string.sub(bitString, position, position+intSize-1)
 				table[spec.Key or #table+1] = bitStringToInteger(integerBits)
 				return position + intSize
 			end
 		else
-			error("DecodeBitArray: No or size given for int value ".. (spec.Key or "[keyless]"))
+			error("LuaBits deserializeBitString: No or size given for int value ".. (spec.Key or "[keyless]"))
 		end
 	elseif spec.Type == "Boolean" then
 		local bit = string.sub(bitString, position)
