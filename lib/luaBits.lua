@@ -20,12 +20,12 @@ local function integerToBitString(integer, bits)
 	end
 	local bitString = ""
 	for i = bits, 1, -1 do
-		local bitNumber = 2^i-1
-		if bitNumber >= integer then
-			bitString = "1"..bitString
+		local bitNumber = 2^(i-1)
+		if integer >= bitNumber then
+			bitString = bitString.."1"
 			integer = integer - bitNumber
 		else
-			bitString = "0"..bitString
+			bitString = bitString.."0"
 		end
 	end
 	return bitString
@@ -38,7 +38,7 @@ local function bitStringToInteger(bitString)
 	for bit in string.gmatch(bitString, ".") do
 		length = length - 1
 		if bit == "1" then
-			value = value + 2^(length)
+			value = value + 2^length
 		end
 	end
 	return value
@@ -59,7 +59,7 @@ local function compressBitString(bitString, forDatastore)
 	local charValue = 0
 	local bitPosition = 1
 	local compressedString = ""
-	for bit in string.gmatch(bitString, ".") do
+	for bit in string.gmatch(bitString:reverse(), ".") do
 		if bit == "1" then
 			charValue = charValue+2^(bitPosition-1)
 		end
@@ -74,7 +74,7 @@ local function compressBitString(bitString, forDatastore)
 					charValue = charValue + 1
 				end
 			end
-			compressedString = compressedString..string.char(charValue+35)
+			compressedString = compressedString..string.char(charValue)
 			charValue = 0
 			bitPosition = 1
 		else
@@ -95,11 +95,13 @@ local function decompressBitString(bitString, forDatastore)
 	for char in string.gmatch(bitString, ".") do
 		local integer = string.byte(char)
 		if forDatastore and integer >= 93 then
-			integer = integer - 1
+			integer = integer - 1 - 35
 			-- We do this, because if the serialized integer is 92 or greater, it is
 			-- stored as 1 greater than its actual value in order to skip ASCII character
 			-- 92. (see above comments)
-		end
+			elseif forDatastore then
+				integer = integer - 35
+			end
 		bits = bits..integerToBitString(integer, numberBits)
 	end
 	return bits
