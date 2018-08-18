@@ -1,4 +1,4 @@
-local VoxelSpec = {
+--[[local VoxelSpec = {
 	['Type']   = "Table";
 	['Values'] = {
 		{
@@ -120,4 +120,4 @@ local SizeFunctions = {
 	['SizeZ'] = function(data)
 		return NumberBitsForRepresentingUnsignedInt(data.MapSize.Z)
 	end;
-}
+}]]
