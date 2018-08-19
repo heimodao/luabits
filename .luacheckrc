@@ -11,6 +11,10 @@ stds.roblox = {
 	}
 }
 
+stds.testez = {
+	globals = {"expect", "it"}
+}
+
 ignore = {
 	"421", -- shadowing local variable
 	"422", -- shadowing argument
@@ -20,4 +24,4 @@ ignore = {
 	"111",
 }
 
-std = "lua51+roblox"
+std = "lua51+roblox+testez"
