@@ -130,7 +130,6 @@ local function deserializeBitString(bitString, spec, sizeCallbacks, container, r
 			root = thisTable
 		else
 			if spec.Key then
-				print("writing table "..spec.Key)
 				container[spec.Key] = thisTable
 			else
 				container[#container+1] = thisTable
@@ -146,7 +145,6 @@ local function deserializeBitString(bitString, spec, sizeCallbacks, container, r
 				repeat
 					local startPos = position
 					position = deserializeBitString(bitString, value, sizeCallbacks, thisTable, root, position)
-					print("parsed "..position-startPos.. " bits")
 				until position >= bitString:len()
 			else
 				position = deserializeBitString(bitString, value, sizeCallbacks, thisTable, root, position)
@@ -158,7 +156,6 @@ local function deserializeBitString(bitString, spec, sizeCallbacks, container, r
 			return root
 		end
 	elseif spec.Type == "Integer" then
-		print("writing int "..spec.Key or "nil key")
 		if spec.Size then
 			local intSize do
 				if typeof(spec.Size) == "number" then
@@ -185,7 +182,6 @@ local function deserializeBitString(bitString, spec, sizeCallbacks, container, r
 				end
 				local integerBits = string.sub(bitString, position, position+intSize-1)
 				container[spec.Key or #container+1] = bitStringToInteger(integerBits)
-				print("int "..spec.Key.." took "..intSize.." bits")
 				return position + intSize
 			end
 		else
@@ -194,10 +190,7 @@ local function deserializeBitString(bitString, spec, sizeCallbacks, container, r
 	elseif spec.Type == "Boolean" then
 		local bit = string.sub(bitString, position, position)
 		local value = bit == "1"
-		print("bit is "..bit)
-		print("writing bool ".. (spec.Key or "nil key").. " as "..tostring(value))
 		container[spec.Key or #table+1] = value
-		print("bool position is "..position..", string length is "..bitString:len())
 		return position + 1
 	end
 end

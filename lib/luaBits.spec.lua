@@ -1,17 +1,11 @@
 local function deepEqual(table1, table2)
 	for ind, value in pairs(table1) do
 		if typeof(value) == "table" then
-			print(ind .." is a table")
 			if not deepEqual(value, table2[ind]) then
 				return false
-			else
-				print(ind .. " is same in both tables")
 			end
 		elseif value ~= table2[ind] then
-			print(ind, value, table2[ind])
 			return false
-		else
-			print(ind .. " is same in both tables")
 		end
 	end
 	return true

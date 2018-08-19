@@ -255,12 +255,10 @@ local function encodeRGB(data)
 	return luaBits.integerToBitString(data.R, 8)..luaBits.integerToBitString(data.G, 8)..luaBits.integerToBitString(data.B, 8)
 end
 
-local function encodeBoolean(bool, name)
+local function encodeBoolean(bool)
 	if bool then
-		print("encoding "..name.." as true")
 		return "1"
 	else
-		print("encoding "..name.." as false")
 		return "0"
 	end
 end
@@ -285,8 +283,6 @@ local function encodeVoxelData(data)
 	end
 	local voxelData = "" do
 		for i = 1, #data.Voxels do
-			local startLength = voxelData:len()
-			print('encoding voxel '..i)
 			local voxel = makeVoxelDataIndexable(data.Voxels[i])
 			voxelData = voxelData .. encodeXYZ(voxel[1], 8) ..
 				encodeXYZ(voxel[2], 8) ..
@@ -294,7 +290,6 @@ local function encodeVoxelData(data)
 				luaBits.integerToBitString(voxel[4], 2) ..
 				encodeBoolean(voxel[5], "can break") ..
 				encodeBoolean(voxel[6], "gravity")
-			print("bitlength is "..voxelData:len()-startLength)
 		end
 	end
 	return mapSizeData .. palletteData .. voxelData
