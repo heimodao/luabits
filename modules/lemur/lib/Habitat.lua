@@ -64,6 +64,7 @@ function Habitat:loadFromFs(path, passedOptions)
 		instance.Name = path:match("([^/]-)$")
 
 		for name in fs.dir(path) do
+			print("child is "..name)
 			-- Why are these even in the iterator?
 			if name ~= "." and name ~= ".." then
 				local childPath = path .. "/" .. name
