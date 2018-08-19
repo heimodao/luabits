@@ -28,17 +28,17 @@ local voxelSpec = {
 					['Repeat'] = 16;
 					['Values'] = {
 						{
-							['Key']  = "Red";
+							['Key']  = "R";
 							['Type'] = "Integer";
-							['Size'] = 7;
+							['Size'] = 8;
 						};{
-							['Key']  = "Green";
+							['Key']  = "G";
 							['Type'] = "Integer";
-							['Size'] = 7;
+							['Size'] = 8;
 						};{
-							['Key']  = "Blue";
+							['Key']  = "B";
 							['Type'] = "Integer";
-							['Size'] = 7;
+							['Size'] = 8;
 						};
 					}
 				}
@@ -255,8 +255,25 @@ local function encodeRGB(data)
 	return luaBits.integerToBitString(data.R, 8)..luaBits.integerToBitString(data.G, 8)..luaBits.integerToBitString(data.B, 8)
 end
 
-local function encodeBoolean(bool)
-	return bool and "1" or "0"
+local function encodeBoolean(bool, name)
+	if bool then
+		print("encoding "..name.." as true")
+		return "1"
+	else
+		print("encoding "..name.." as false")
+		return "0"
+	end
+end
+
+local function makeVoxelDataIndexable(data)
+	local newData = {}
+	newData[1] = data.StartPosition
+	newData[2] = data.EndPosition
+	newData[3] = data.Color
+	newData[4] = data.Material
+	newData[5] = data.IsBreakable
+	newData[6] = data.HasGravity
+	return newData
 end
 
 local function encodeVoxelData(data)
@@ -268,15 +285,24 @@ local function encodeVoxelData(data)
 	end
 	local voxelData = "" do
 		for i = 1, #data.Voxels do
-			local voxel = data.Voxels[i]
-			voxelData = voxelData .. encodeXYZ(voxel.StartPosition, 8) .. encodeXYZ(voxel.EndPosition, 8) ..
-				luaBits.integerToBitString(voxel.Color, 4) ..
-				luaBits.integerToBitString(voxel.Material, 2) ..
-				encodeBoolean(voxel.IsBreakable) ..
-				encodeBoolean(voxel.HasGravity)
+			local startLength = voxelData:len()
+			print('encoding voxel '..i)
+			local voxel = makeVoxelDataIndexable(data.Voxels[i])
+			voxelData = voxelData .. encodeXYZ(voxel[1], 8) ..
+				encodeXYZ(voxel[2], 8) ..
+				luaBits.integerToBitString(voxel[3], 4) ..
+				luaBits.integerToBitString(voxel[4], 2) ..
+				encodeBoolean(voxel[5], "can break") ..
+				encodeBoolean(voxel[6], "gravity")
+			print("bitlength is "..voxelData:len()-startLength)
 		end
 	end
 	return mapSizeData .. palletteData .. voxelData
 end
 
-return voxelData, encodeVoxelData(voxelData), voxelSpec, sizeCallbacks
+return {
+	data = voxelData,
+	encodedData = encodeVoxelData(voxelData),
+	spec = voxelSpec,
+	callbacks = sizeCallbacks
+}

@@ -1,3 +1,21 @@
+local function deepEqual(table1, table2)
+	for ind, value in pairs(table1) do
+		if typeof(value) == "table" then
+			print(ind .." is a table")
+			if not deepEqual(value, table2[ind]) then
+				return false
+			else
+				print(ind .. " is same in both tables")
+			end
+		elseif value ~= table2[ind] then
+			print(ind, value, table2[ind])
+			return false
+		else
+			print(ind .. " is same in both tables")
+		end
+	end
+	return true
+end
 return function()
 	local luaBits = require(script.Parent.luaBits)
 
@@ -58,12 +76,22 @@ return function()
 		expect(integer).to.equal(1000)
 	end)
 
-	local voxelData, voxelBitString, voxelSpec, sizeCallbacks = require(script.Parent.voxelData)
+	local voxelData = require(script.Parent.voxelData)
 
-	it("should encode and decode complex data structures", function()
-		--[[local compressedData, padding = luaBits.compressBitString(voxelBitString)
-		local decompressedData = luaBits.decompressBitString(compressedData, padding)]]
-		local deserializedData = luaBits.deserializeBitString(voxelBitString, voxelSpec, sizeCallbacks)
-		expect(deserializedData).to.deep.equal(voxelData)
+	it("should decode complex data structures according to specs", function()
+		local deserializedData = luaBits.deserializeBitString(voxelData.encodedData, voxelData.spec, voxelData.callbacks)
+		expect(deepEqual(voxelData.data, deserializedData)).to.equal(true)
+
+		-- 8 bit compression
+		local compressedData, padding = luaBits.compressBitString(voxelData.encodedData)
+		local decompressedData = luaBits.decompressBitString(compressedData, false, padding)
+		deserializedData = luaBits.deserializeBitString(decompressedData, voxelData.spec, voxelData.callbacks)
+		expect(deepEqual(voxelData.data, deserializedData)).to.equal(true)
+
+		-- 6 bit compression (datastore)
+		compressedData, padding = luaBits.compressBitString(voxelData.encodedData, true)
+		decompressedData = luaBits.decompressBitString(compressedData, true, padding)
+		deserializedData = luaBits.deserializeBitString(decompressedData, voxelData.spec, voxelData.callbacks)
+		expect(deepEqual(voxelData.data, deserializedData)).to.equal(true)
 	end)
 end

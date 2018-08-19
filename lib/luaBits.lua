@@ -123,17 +123,42 @@ local function decompressBitString(bitString, forDatastore, padding)
 end
 
 local function deserializeBitString(bitString, spec, sizeCallbacks, container, root, position)
-	root = root or {}
-	container = container or root
 	position = position or 1
 	if spec.Type == "Table" then
+		local thisTable = {}
+		if not root then
+			root = thisTable
+		else
+			if spec.Key then
+				print("writing table "..spec.Key)
+				container[spec.Key] = thisTable
+			else
+				container[#container+1] = thisTable
+			end
+		end
 		for i = 1, #spec.Values do
 			local value = spec.Values[i]
-			print(i .. " " .. value)
-			position = deserializeBitString(bitString, value, sizeCallbacks, container, position)
+			if value.Repeat then
+				for _ = 1, value.Repeat do
+					position = deserializeBitString(bitString, value, sizeCallbacks, thisTable, root, position)
+				end
+			elseif value.RepeatToEnd then
+				repeat
+					local startPos = position
+					position = deserializeBitString(bitString, value, sizeCallbacks, thisTable, root, position)
+					print("parsed "..position-startPos.. " bits")
+				until position >= bitString:len()
+			else
+				position = deserializeBitString(bitString, value, sizeCallbacks, thisTable, root, position)
+			end
 		end
-		return position
+		if thisTable ~= root then
+			return position
+		else
+			return root
+		end
 	elseif spec.Type == "Integer" then
+		print("writing int "..spec.Key or "nil key")
 		if spec.Size then
 			local intSize do
 				if typeof(spec.Size) == "number" then
@@ -159,15 +184,20 @@ local function deserializeBitString(bitString, spec, sizeCallbacks, container, r
 					error("LuaBits deserializeBitString: Incorrect size given for int value ''".. (spec.Key or "[keyless]") .."', must be callback string or integer")
 				end
 				local integerBits = string.sub(bitString, position, position+intSize-1)
-				container[spec.Key or #table+1] = bitStringToInteger(integerBits)
+				container[spec.Key or #container+1] = bitStringToInteger(integerBits)
+				print("int "..spec.Key.." took "..intSize.." bits")
 				return position + intSize
 			end
 		else
 			error("LuaBits deserializeBitString: No or size given for int value ".. (spec.Key or "[keyless]"))
 		end
 	elseif spec.Type == "Boolean" then
-		local bit = string.sub(bitString, position)
-		container[spec.Key or #table+1] = bit == "1"
+		local bit = string.sub(bitString, position, position)
+		local value = bit == "1"
+		print("bit is "..bit)
+		print("writing bool ".. (spec.Key or "nil key").. " as "..tostring(value))
+		container[spec.Key or #table+1] = value
+		print("bool position is "..position..", string length is "..bitString:len())
 		return position + 1
 	end
 end
