@@ -101,6 +101,8 @@ function Habitat:loadFromFs(path, passedOptions)
 		end
 
 		return instance
+	else
+		print("returning nil")
 	end
 
 	return nil
