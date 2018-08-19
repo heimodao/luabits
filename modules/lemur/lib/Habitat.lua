@@ -44,7 +44,6 @@ function Habitat:loadFromFs(path, passedOptions)
 	local options = assign({}, defaultLoadFromFsOptions, passedOptions)
 
 	if fs.isFile(path) then
-		print('is file')
 		if path:find("%.lua$") then
 			local instance = Instance.new("ModuleScript")
 			local contents = assert(fs.read(path))
@@ -57,7 +56,7 @@ function Habitat:loadFromFs(path, passedOptions)
 			return instance
 		end
 	elseif fs.isDirectory(path) then
-		print('directory')
+		print(path, 'directory')
 		local instance = Instance.new("Folder")
 		instance.Name = path:match("([^/]-)$")
 
@@ -67,14 +66,17 @@ function Habitat:loadFromFs(path, passedOptions)
 				local childPath = path .. "/" .. name
 
 				local childInstance = Habitat:loadFromFs(childPath, passedOptions)
+				print('loading child '..path)
 				if childInstance ~= nil then
 					childInstance.Parent = instance
+				else
+					print('failed to load child '..path)
 				end
 			end
 		end
 
 		if options.loadInitModules then
-			print('loading init modules')
+			print(path, 'loading init modules')
 			local init = instance:FindFirstChild("init")
 
 			if init ~= nil then
@@ -91,10 +93,10 @@ function Habitat:loadFromFs(path, passedOptions)
 
 				instance = init
 			else
-				print("init is nil")
+				print(path, "init is nil")
 			end
 		else
-			print('not loading init modules')
+			print(path, 'not loading init modules')
 		end
 
 		return instance
