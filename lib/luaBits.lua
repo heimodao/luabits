@@ -64,9 +64,9 @@ local function compressBitString(bitString, forDatastore)
 	local charValue = 0
 	local bitPosition = 1
 	local compressedString = ""
-	for bit in string.gmatch(bitString:reverse(), ".") do
+	for bit in string.gmatch(bitString, ".") do
 		if bit == "1" then
-			charValue = charValue+2^(bitPosition-1)
+			charValue = charValue + 2^(charSize-bitPosition)
 		end
 		if bitPosition == charSize then
 			if forDatastore then
@@ -86,15 +86,21 @@ local function compressBitString(bitString, forDatastore)
 			bitPosition = bitPosition + 1
 		end
 	end
-	if charValue > 0 then
-		local remainingBits = charSize-bitPosition
-		charValue = charValue * (2^remainingBits) -- Shifts bits #remainingBits places left, i.e. appends #remainingBits zeroes to the end, adding enough bits to even out the very last value
+	if bitPosition > 1 then
+		if forDatastore then
+			charValue = charValue + 35
+			if charValue >= 92 then
+				charValue = charValue + 1
+			end
+		end
+		local remainingBits = charSize - (bitPosition - 1)
 		compressedString = compressedString..string.char(charValue)
+		return compressedString, remainingBits
 	end
-	return compressedString
+	return compressedString, nil
 end
 
-local function decompressBitString(bitString, forDatastore)
+local function decompressBitString(bitString, forDatastore, padding)
 	local numberBits = forDatastore and 6 or 8
 	local bits = ""
 	for char in string.gmatch(bitString, ".") do
@@ -109,7 +115,11 @@ local function decompressBitString(bitString, forDatastore)
 			end
 		bits = bits..integerToBitString(integer, numberBits)
 	end
-	return bits
+	if padding then
+		return bits:sub(1, bits:len()-padding)
+	else
+		return bits
+	end
 end
 
 local function deserializeBitString(bitString, spec, sizeCallbacks, container, root, position)
@@ -119,6 +129,7 @@ local function deserializeBitString(bitString, spec, sizeCallbacks, container, r
 	if spec.Type == "Table" then
 		for i = 1, #spec.Values do
 			local value = spec.Values[i]
+			print(i .. " " .. value)
 			position = deserializeBitString(bitString, value, sizeCallbacks, container, position)
 		end
 		return position
