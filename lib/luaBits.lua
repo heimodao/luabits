@@ -7,10 +7,15 @@
 local NAT_LOG_2 = math.log(2)
 
 -- Returns the number of bits needed to represent an integer in binary format.
-local function bitsToRepresentInt(integer)
+--[[local function bitsToRepresentInt(integer)
 	integer = math.floor(integer)
 	local bits = math.ceil(math.log(integer+1)/NAT_LOG_2)
 	return math.log(integer)/NAT_LOG_2, bits, (2^bits)-1
+end]]
+
+local function bitsToRepresentInt(integer)
+	integer = math.floor(integer)
+	return math.log(integer+1)/NAT_LOG_2
 end
 
 -- Converts an integer into a sequence of bits, stored as a string
@@ -107,13 +112,10 @@ local function decompressBitString(bitString, forDatastore)
 	return bits
 end
 
-local function deserializeBitString(bitString, spec, sizeCallbacks, container, position)
-	if not root then
-		print("No root")
-	end
-	local root = root or {}
-	local table = container or root
-	local position = position or 1
+local function deserializeBitString(bitString, spec, sizeCallbacks, container, root, position)
+	root = root or {}
+	container = container or root
+	position = position or 1
 	if spec.Type == "Table" then
 		for i = 1, #spec.Values do
 			local value = spec.Values[i]
@@ -146,7 +148,7 @@ local function deserializeBitString(bitString, spec, sizeCallbacks, container, p
 					error("LuaBits deserializeBitString: Incorrect size given for int value ''".. (spec.Key or "[keyless]") .."', must be callback string or integer")
 				end
 				local integerBits = string.sub(bitString, position, position+intSize-1)
-				table[spec.Key or #table+1] = bitStringToInteger(integerBits)
+				container[spec.Key or #table+1] = bitStringToInteger(integerBits)
 				return position + intSize
 			end
 		else
@@ -154,7 +156,7 @@ local function deserializeBitString(bitString, spec, sizeCallbacks, container, p
 		end
 	elseif spec.Type == "Boolean" then
 		local bit = string.sub(bitString, position)
-		table[spec.Key or #table+1] = bit == "1"
+		container[spec.Key or #table+1] = bit == "1"
 		return position + 1
 	end
 end
