@@ -67,11 +67,11 @@ function Habitat:loadFromFs(path, passedOptions)
 				local childPath = path .. "/" .. name
 
 				local childInstance = Habitat:loadFromFs(childPath, passedOptions)
-				print('loading child '..path)
+				print('loading child '..childPath)
 				if childInstance ~= nil then
 					childInstance.Parent = instance
 				else
-					print('failed to load child '..path)
+					print('failed to load child '..childPath)
 				end
 			end
 		end
