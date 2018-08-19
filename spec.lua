@@ -66,5 +66,8 @@ local results = TestEZ.TestBootstrap:run(Root.Library, TestEZ.Reporters.TextRepo
 
 -- Did something go wrong?
 if results.failureCount > 0 then
+	print('failed')
 	os.exit(1)
+else
+	print('pass')
 end
