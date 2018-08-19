@@ -44,6 +44,7 @@ function Habitat:loadFromFs(path, passedOptions)
 	local options = assign({}, defaultLoadFromFsOptions, passedOptions)
 
 	if fs.isFile(path) then
+		print(path, 'file')
 		if path:find("%.lua$") then
 			local instance = Instance.new("ModuleScript")
 			local contents = assert(fs.read(path))
