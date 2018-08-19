@@ -52,7 +52,6 @@ Root.Name = "Root"
 -- Load all of the modules specified above
 for _, module in ipairs(LOAD_MODULES) do
 	local container = habitat:loadFromFs(module[1])
-	print(module[2])
 	container.Name = module[2]
 	container.Parent = Root
 end
@@ -66,8 +65,5 @@ local results = TestEZ.TestBootstrap:run(Root.Library, TestEZ.Reporters.TextRepo
 
 -- Did something go wrong?
 if results.failureCount > 0 then
-	print('failed')
 	os.exit(1)
-else
-	print('pass')
 end
