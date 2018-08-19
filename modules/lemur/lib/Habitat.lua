@@ -35,6 +35,8 @@ function Habitat.new(settings)
 end
 
 function Habitat:loadFromFs(path, passedOptions)
+	print("loading "..path)
+
 	validateType("path", path, "string")
 
 	if passedOptions ~= nil then
@@ -102,7 +104,7 @@ function Habitat:loadFromFs(path, passedOptions)
 
 		return instance
 	else
-		print("returning nil")
+		print("returning nil "..path)
 	end
 
 	return nil
