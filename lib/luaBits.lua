@@ -143,7 +143,6 @@ local function deserializeBitString(bitString, spec, sizeCallbacks, container, r
 				end
 			elseif value.RepeatToEnd then
 				repeat
-					local startPos = position
 					position = deserializeBitString(bitString, value, sizeCallbacks, thisTable, root, position)
 				until position >= bitString:len()
 			else
