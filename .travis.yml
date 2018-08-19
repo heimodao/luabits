@@ -22,7 +22,6 @@ install:
   - luarocks install luacheck
 
 script:
-  - luacheck lib
   - lua -lluacov spec.lua
 
 after_success:
