@@ -38,8 +38,3 @@ return function()
 		expect(integer).to.equal(255)
 	end)
 end
-
-
-
---[[0   1  0  1  0 0 1 0
-128 64 32 16 8 4 2 1]]
