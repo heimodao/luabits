@@ -72,18 +72,19 @@ return function()
 
 	local voxelData = require(script.Parent.voxelData)
 
-	it("should decode complex data structures according to specs", function()
-		local deserializedData = luaBits.deserializeBitString(voxelData.encodedData, voxelData.spec, voxelData.callbacks)
+	it("should encode and decode complex data structures according to specs", function()
+		local serializedData = luaBits.serializeDataTree(voxelData.data, voxelData.spec, voxelData.callbacks)
+		local deserializedData = luaBits.deserializeBitString(serializedData, voxelData.spec, voxelData.callbacks)
 		expect(deepEqual(voxelData.data, deserializedData)).to.equal(true)
 
 		-- 8 bit compression
-		local compressedData, padding = luaBits.compressBitString(voxelData.encodedData)
+		local compressedData, padding = luaBits.compressBitString(serializedData)
 		local decompressedData = luaBits.decompressBitString(compressedData, false, padding)
 		deserializedData = luaBits.deserializeBitString(decompressedData, voxelData.spec, voxelData.callbacks)
 		expect(deepEqual(voxelData.data, deserializedData)).to.equal(true)
 
 		-- 6 bit compression (datastore)
-		compressedData, padding = luaBits.compressBitString(voxelData.encodedData, true)
+		compressedData, padding = luaBits.compressBitString(serializedData, true)
 		decompressedData = luaBits.decompressBitString(compressedData, true, padding)
 		deserializedData = luaBits.deserializeBitString(decompressedData, voxelData.spec, voxelData.callbacks)
 		expect(deepEqual(voxelData.data, deserializedData)).to.equal(true)

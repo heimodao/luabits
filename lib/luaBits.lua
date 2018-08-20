@@ -125,6 +125,7 @@ end
 local function serializeDataTree(data, spec, sizeCallbacks, rootData)
 	local bitString = ""
 	if spec.Type == "Table" then
+		print('encoding table '..(spec.Key or "[keyless]"))
 		if not typeof(data) == "table" then
 			error("luaBits serializeDataTree: expected data "..(spec.Key or "[keyless]").." to be a table, "..typeof(data).." was given")
 		end
@@ -134,35 +135,36 @@ local function serializeDataTree(data, spec, sizeCallbacks, rootData)
 			local dataEquivalent do
 				if value.Key then
 					dataEquivalent = data[value.Key]
-					if not dataEquivalent then
-						error("luaBits serializeDataTree: expected field "..value.Key.. " in table "..(spec.Key or "[no key]"))
+					if dataEquivalent == nil then
+						error("luaBits serializeDataTree: expected field "..value.Key.. " in table "..(spec.Key or "[keyless]"))
 					end
 				else
 					dataEquivalent = data[ind]
 					if not dataEquivalent then
-						error("luaBits serializeDataTree: expected index ["..ind.. "] in table "..(spec.Key or "[no key]"))
+						error("luaBits serializeDataTree: expected index ["..ind.. "] in table "..(spec.Key or "[keyless]"))
 					end
 				end
 			end
 			if value.Repeat then
 				for i = 1, value.Repeat do
-					local repeatVal = dataEquivalent[repeatedVals+i]
+					local repeatVal = data[repeatedVals+i]
 					if not repeatVal then
-						error("luaBits serializeDataTree: expected index ["..i.."] in table "..(value.Key or "[no key]"))
+						error("luaBits serializeDataTree: expected index ["..i.."] in table "..(value.Key or "[keyless]"))
 					end
-					bitString = bitString .. serializeDataTree(dataEquivalent[i], value, sizeCallbacks, data)
+					bitString = bitString .. serializeDataTree(repeatVal, value, sizeCallbacks, rootData or data)
 				end
 				repeatedVals = repeatedVals + value.Repeat
 			elseif value.RepeatToEnd then
-				for i = repeatedVals+1, #dataEquivalent do
-					bitString = bitString .. serializeDataTree(dataEquivalent[i], value, sizeCallbacks, data)
+				for i = repeatedVals+1, #data do
+					bitString = bitString .. serializeDataTree(data[i], value, sizeCallbacks, rootData or data)
 				end
 			else
-				bitString = bitString .. serializeDataTree(dataEquivalent, value, sizeCallbacks, data)
+				bitString = bitString .. serializeDataTree(dataEquivalent, value, sizeCallbacks, rootData or data)
 			end
 		end
 		return bitString
 	elseif spec.Type == "Integer" then
+		print('encoding int '..(spec.Key or "[keyless]"))
 		if not typeof(data) == "number" then
 			error("luaBits serializeDataTree: expected data "..(spec.Key or "[keyless]").." to be a number, "..typeof(data).." was given")
 		end
@@ -195,6 +197,7 @@ local function serializeDataTree(data, spec, sizeCallbacks, rootData)
 		end
 		return integerToBitString(data, intSize)
 	elseif spec.Type == "Boolean" then
+		print('encoding bool '..(spec.Key or "[keyless]"))
 		if not typeof(data) == "boolean" then
 			error("luaBits serializeDataTree: expected data "..(spec.Key or "[keyless]").." to be a boolean, "..typeof(data).." was given")
 		end

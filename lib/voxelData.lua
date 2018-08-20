@@ -1,4 +1,5 @@
 local voxelSpec = {
+	['Key']    = "Root";
 	['Type']   = "Table";
 	['Values'] = {
 		{
@@ -247,7 +248,7 @@ local sizeCallbacks = {
 	end;
 }
 
-local function encodeXYZ(data, bits)
+--[[local function encodeXYZ(data, bits)
 	return luaBits.integerToBitString(data.X, bits)..luaBits.integerToBitString(data.Y, bits)..luaBits.integerToBitString(data.Z, bits)
 end
 
@@ -293,11 +294,11 @@ local function encodeVoxelData(data)
 		end
 	end
 	return mapSizeData .. palletteData .. voxelData
-end
+end]]
 
 return {
 	data = voxelData,
-	encodedData = encodeVoxelData(voxelData),
+	--encodedData = encodeVoxelData(voxelData),
 	spec = voxelSpec,
 	callbacks = sizeCallbacks
 }
