@@ -177,11 +177,14 @@ local function serializeDataTree(data, spec, sizeCallbacks, rootData)
 				if callback then
 					if typeof(callback) == "function" then
 						intSize = callback(rootData)
+						if typeof(intSize) ~= "number" then
+							error("LuaBits deserializeBitString: Expected integer to return from size callback "..spec.Size..", "..typeof(intSize).." was given")
+						end
 						sizeCallbacks[spec.Size] = intSize
 					elseif typeof(callback) == "number" then
 						intSize = callback
 					else
-						error("LuaBits deserializeBitString: Incorrect type given for callback ''"..spec.Size.. "', Value must be a function")
+						error("LuaBits deserializeBitString: Incorrect type given for callback "..spec.Size.." ("..typeof(spec.Size).."), value must be a function")
 					end
 				else
 					error("LuaBits deserializeBitString: Callback '"..spec.Size.."' is undefined.")
@@ -197,7 +200,7 @@ local function serializeDataTree(data, spec, sizeCallbacks, rootData)
 		end
 		return (data and "1" or "0")
 	else
-		error("luaBits serializeDataTree: invalid Type field given for "..(spec.Key or "[keyless]").." must be 'Integer', 'Boolean', or 'Table'")
+		error("luaBits serializeDataTree: invalid [Type] field given for "..(spec.Key or "[keyless]").." must be 'Integer', 'Boolean', or 'Table'")
 	end
 end
 
