@@ -283,6 +283,7 @@ local luaBits = {
 	compressBitString    = compressBitString;
 	decompressBitString  = decompressBitString;
 	deserializeBitString = deserializeBitString;
+	serializeDataTree    = serializeDataTree;
 }
 
 return luaBits
