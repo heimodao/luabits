@@ -132,19 +132,6 @@ local function serializeDataTree(data, spec, sizeCallbacks, rootData)
 		--repeatedVals ensures we can have multiple sets of repeated values in one table
 		local repeatedVals = 0
 		for ind, value in pairs(spec.Values) do
-			local dataEquivalent do
-				if value.Key then
-					dataEquivalent = data[value.Key]
-					if dataEquivalent == nil then
-						error("luaBits serializeDataTree: expected field "..value.Key.. " in table "..(spec.Key or "[keyless]"))
-					end
-				else
-					dataEquivalent = data[ind]
-					if not dataEquivalent then
-						error("luaBits serializeDataTree: expected index ["..ind.. "] in table "..(spec.Key or "[keyless]"))
-					end
-				end
-			end
 			if value.Repeat then
 				for i = 1, value.Repeat do
 					local repeatVal = data[repeatedVals+i]
@@ -159,7 +146,20 @@ local function serializeDataTree(data, spec, sizeCallbacks, rootData)
 					bitString = bitString .. serializeDataTree(data[i], value, sizeCallbacks, rootData or data)
 				end
 			else
-				bitString = bitString .. serializeDataTree(dataEquivalent, value, sizeCallbacks, rootData or data)
+				local subData do
+					if value.Key then
+						subData = data[value.Key]
+						if subData == nil then
+							error("luaBits serializeDataTree: expected field "..value.Key.. " in table "..(spec.Key or "[keyless]"))
+						end
+					else
+						subData = data[ind]
+						if not subData then
+							error("luaBits serializeDataTree: expected index ["..ind.. "] in table "..(spec.Key or "[keyless]"))
+						end
+					end
+				end
+				bitString = bitString .. serializeDataTree(subData, value, sizeCallbacks, rootData or data)
 			end
 		end
 		return bitString
