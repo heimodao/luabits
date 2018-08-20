@@ -122,6 +122,85 @@ local function decompressBitString(bitString, forDatastore, padding)
 	end
 end
 
+local function serializeDataTree(data, spec, sizeCallbacks, rootData)
+	local bitString = ""
+	if spec.Type == "Table" then
+		if not typeof(data) == "table" then
+			error("luaBits serializeDataTree: expected data "..(spec.Key or "[keyless]").." to be a table, "..typeof(data).." was given")
+		end
+		--repeatedVals ensures we can have multiple sets of repeated values in one table
+		local repeatedVals = 0
+		for ind, value in pairs(spec.Values) do
+			local dataEquivalent do
+				if value.Key then
+					dataEquivalent = data[value.Key]
+					if not dataEquivalent then
+						error("luaBits serializeDataTree: expected field "..value.Key.. " in table "..(spec.Key or "[no key]"))
+					end
+				else
+					dataEquivalent = data[ind]
+					if not dataEquivalent then
+						error("luaBits serializeDataTree: expected index ["..ind.. "] in table "..(spec.Key or "[no key]"))
+					end
+				end
+			end
+			if value.Repeat then
+				for i = 1, value.Repeat do
+					local repeatVal = dataEquivalent[repeatedVals+i]
+					if not repeatVal then
+						error("luaBits serializeDataTree: expected index ["..i.."] in table "..(value.Key or "[no key]"))
+					end
+					bitString = bitString .. serializeDataTree(dataEquivalent[i], value, sizeCallbacks, data)
+				end
+				repeatedVals = repeatedVals + value.Repeat
+			elseif value.RepeatToEnd then
+				for i = repeatedVals+1, #dataEquivalent do
+					bitString = bitString .. serializeDataTree(dataEquivalent[i], value, sizeCallbacks, data)
+				end
+			else
+				bitString = bitString .. serializeDataTree(dataEquivalent, value, sizeCallbacks, data)
+			end
+		end
+		return bitString
+	elseif spec.Type == "Integer" then
+		if not typeof(data) == "number" then
+			error("luaBits serializeDataTree: expected data "..(spec.Key or "[keyless]").." to be a number, "..typeof(data).." was given")
+		end
+		local intSize do
+			if typeof(spec.Size) == "number" then
+				intSize = spec.Size
+			elseif typeof(spec.Size) == "string" then
+				if not sizeCallbacks then
+					error("LuaBits deserializeBitString: Callback "..spec.Size.." failed; callbacks table is undefined")
+				end
+				local callback = sizeCallbacks[spec.Size]
+				if callback then
+					if typeof(callback) == "function" then
+						intSize = callback(rootData)
+						sizeCallbacks[spec.Size] = intSize
+					elseif typeof(callback) == "number" then
+						intSize = callback
+					else
+						error("LuaBits deserializeBitString: Incorrect type given for callback ''"..spec.Size.. "', Value must be a function")
+					end
+				else
+					error("LuaBits deserializeBitString: Callback '"..spec.Size.."' is undefined.")
+				end
+			else
+				error("LuaBits deserializeBitString: Incorrect size given for int value ".. (spec.Key or "[keyless]") ..", must be callback string or integer")
+			end
+		end
+		return integerToBitString(data, intSize)
+	elseif spec.Type == "Boolean" then
+		if not typeof(data) == "boolean" then
+			error("luaBits serializeDataTree: expected data "..(spec.Key or "[keyless]").." to be a boolean, "..typeof(data).." was given")
+		end
+		return (data and "1" or "0")
+	else
+		error("luaBits serializeDataTree: invalid Type field given for "..(spec.Key or "[keyless]").." must be 'Integer', 'Boolean', or 'Table'")
+	end
+end
+
 local function deserializeBitString(bitString, spec, sizeCallbacks, container, root, position)
 	position = position or 1
 	if spec.Type == "Table" then
