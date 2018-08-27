@@ -15,7 +15,7 @@ end]]
 
 local function bitsToRepresentInt(integer)
 	integer = math.floor(integer)
-	return math.log(integer+1)/NAT_LOG_2
+	return math.ceil(math.log(integer+1)/NAT_LOG_2)
 end
 
 -- Converts an integer into a sequence of bits, stored as a string
