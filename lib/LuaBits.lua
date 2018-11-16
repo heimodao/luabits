@@ -20,6 +20,7 @@ function LuaBits.ConvertBitTableToString(bitTable)
 	for _, v in ipairs(bitTable) do
 		str = str..v and "1" or "0"
 	end
+	return str
 end
 
 -- Converts an integer into a sequence of bits, stored as a string
