@@ -78,7 +78,6 @@ function LuaBits.SerializeBitTable(bitTable, forDatastore)
 					charValue = charValue + 1
 				end
 			end
-			print("encoding", charValue, string.char(charValue))
 			compressedStringTable[#compressedStringTable+1] = string.char(charValue)
 			charValue = 0
 			bitPosition = 1
@@ -95,7 +94,6 @@ function LuaBits.SerializeBitTable(bitTable, forDatastore)
 			end
 		end
 		remainingBits = charSize - (bitPosition - 1)
-		print("encoding extra", charValue, string.char(charValue))
 		compressedStringTable[#compressedStringTable+1] = string.char(charValue)
 	end
 	return table.concat(compressedStringTable), remainingBits
@@ -114,7 +112,6 @@ function LuaBits.DeserializeBitTable(bitString, forDatastore, padding)
 		elseif forDatastore then
 			integer = integer - 35
 		end
-		print("decoded", char, "to", integer)
 		local bitTable = LuaBits.IntegerToBitTable(integer, numberBits)
 		for i = 1, numberBits do
 			bits[#bits+1] = bitTable[i]

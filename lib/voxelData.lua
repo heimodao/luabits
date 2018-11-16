@@ -234,26 +234,26 @@ local voxelData = {
 	}
 }
 
-local luaBits = require(script.Parent.luaBits)
+local LuaBits = require(script.Parent.LuaBits)
 
 local sizeCallbacks = {
 	['SizeX'] = function(data)
-		return luaBits.bitsToRepresentInt(data.MapSize.X)
+		return LuaBits.bitsToRepresentInt(data.MapSize.X)
 	end;
 	['SizeY'] = function(data)
-		return luaBits.bitsToRepresentInt(data.MapSize.Y)
+		return LuaBits.bitsToRepresentInt(data.MapSize.Y)
 	end;
 	['SizeZ'] = function(data)
-		return luaBits.bitsToRepresentInt(data.MapSize.Z)
+		return LuaBits.bitsToRepresentInt(data.MapSize.Z)
 	end;
 }
 
 --[[local function encodeXYZ(data, bits)
-	return luaBits.integerToBitString(data.X, bits)..luaBits.integerToBitString(data.Y, bits)..luaBits.integerToBitString(data.Z, bits)
+	return LuaBits.integerToBitString(data.X, bits)..LuaBits.integerToBitString(data.Y, bits)..LuaBits.integerToBitString(data.Z, bits)
 end
 
 local function encodeRGB(data)
-	return luaBits.integerToBitString(data.R, 8)..luaBits.integerToBitString(data.G, 8)..luaBits.integerToBitString(data.B, 8)
+	return LuaBits.integerToBitString(data.R, 8)..LuaBits.integerToBitString(data.G, 8)..LuaBits.integerToBitString(data.B, 8)
 end
 
 local function encodeBoolean(bool)
@@ -287,8 +287,8 @@ local function encodeVoxelData(data)
 			local voxel = makeVoxelDataIndexable(data.Voxels[i])
 			voxelData = voxelData .. encodeXYZ(voxel[1], 8) ..
 				encodeXYZ(voxel[2], 8) ..
-				luaBits.integerToBitString(voxel[3], 4) ..
-				luaBits.integerToBitString(voxel[4], 2) ..
+				LuaBits.integerToBitString(voxel[3], 4) ..
+				LuaBits.integerToBitString(voxel[4], 2) ..
 				encodeBoolean(voxel[5], "can break") ..
 				encodeBoolean(voxel[6], "gravity")
 		end
