@@ -122,6 +122,7 @@ function LuaBits.DeserializeBitTable(bitString, forDatastore, padding)
 			bits[i] = nil
 		end
 	end
+	return bits
 end
 
 function LuaBits.DataTreeToBitTable(data, spec, sizeCallbacks, rootData, bitTable)
