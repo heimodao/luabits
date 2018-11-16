@@ -86,7 +86,6 @@ function LuaBits.SerializeBitTable(bitTable, forDatastore)
 					charValue = charValue + 1
 				end
 			end
-			print("encoding "..charValue.." to "..string.char(charValue))
 			compressedStringTable[#compressedStringTable+1] = string.char(charValue)
 			charValue = 0
 			bitPosition = 1
@@ -103,7 +102,6 @@ function LuaBits.SerializeBitTable(bitTable, forDatastore)
 			end
 		end
 		remainingBits = charSize - (bitPosition - 1)
-		print("encoding "..charValue.." to "..string.char(charValue))
 		compressedStringTable[#compressedStringTable+1] = string.char(charValue)
 	end
 	return table.concat(compressedStringTable), remainingBits
@@ -122,8 +120,6 @@ function LuaBits.DeserializeBitTable(bitString, forDatastore, padding)
 		elseif forDatastore then
 			integer = integer - 35
 		end
-		--print("decoding "..char.." to "..integer)
-		print("decoding", char, "to", integer)
 		local bitTable = LuaBits.IntegerToBitTable(integer, numberBits)
 		for i = 1, numberBits do
 			bits[#bits+1] = bitTable[i]
@@ -209,17 +205,14 @@ function LuaBits.DataTreeToBitTable(data, spec, sizeCallbacks, rootData, bitTabl
 			end
 		end
 		local integerBits = LuaBits.IntegerToBitTable(data, intSize)
-		print('Encoded number '..(spec.Key or "[keyless]").." "..data..' as '..LuaBits.ConvertBitTableToString(integerBits))
 		for i = 1, intSize do
 			--table.insert(bitTable, i, integerBits[i])
 			bitTable[#bitTable+1] = integerBits[i]
 		end
-		print('bit string is '..LuaBits.ConvertBitTableToString(bitTable))
 	elseif spec.Type == "Boolean" then
 		if not typeof(data) == "boolean" then
 			error("luaBits serializeDataTree: expected data "..(spec.Key or "[keyless]").." to be a boolean, "..typeof(data).." was given")
 		end
-		print('Encoded bool '..(spec.Key or "[keyless]"), data)
 		--table.insert(bitTable, 1, data)
 		bitTable[#bitTable+1] = data
 	else
