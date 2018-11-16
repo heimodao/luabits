@@ -67,8 +67,7 @@ function LuaBits.SerializeBitTable(bitTable, forDatastore)
 		serialization instead.
 		https://devforum.roblox.com/t/text-compression/163637/6
 	 ]]
-	 -- Start at 1 to avoid null character
-	local charValue = 1
+	local charValue = 0
 	local bitPosition = 1
 	local compressedStringTable = {}
 	for i = 1, #bitTable do
@@ -89,7 +88,7 @@ function LuaBits.SerializeBitTable(bitTable, forDatastore)
 			end
 			print("encoding "..charValue.." to "..string.char(charValue))
 			compressedStringTable[#compressedStringTable+1] = string.char(charValue)
-			charValue = 1
+			charValue = 0
 			bitPosition = 1
 		else
 			bitPosition = bitPosition + 1
@@ -114,7 +113,7 @@ function LuaBits.DeserializeBitTable(bitString, forDatastore, padding)
 	local numberBits = forDatastore and 6 or 8
 	local bits = {}
 	for char in string.gmatch(bitString, ".") do
-		local integer = string.byte(char) - 1 -- Subtract 1 right away (see line 62)
+		local integer = string.byte(char)
 		if forDatastore and integer >= 93 then
 			integer = integer - 1 - 35
 			-- We do this, because if the serialized integer is 92 or greater, it is
@@ -210,14 +209,19 @@ function LuaBits.DataTreeToBitTable(data, spec, sizeCallbacks, rootData, bitTabl
 			end
 		end
 		local integerBits = LuaBits.IntegerToBitTable(data, intSize)
+		print('Encoded number '..(spec.Key or "[keyless]").." "..data..' as '..LuaBits.ConvertBitTableToString(integerBits))
 		for i = 1, intSize do
-			table.insert(bitTable, i, integerBits[i])
+			--table.insert(bitTable, i, integerBits[i])
+			bitTable[#bitTable+1] = integerBits[i]
 		end
+		print('bit string is '..LuaBits.ConvertBitTableToString(bitTable))
 	elseif spec.Type == "Boolean" then
 		if not typeof(data) == "boolean" then
 			error("luaBits serializeDataTree: expected data "..(spec.Key or "[keyless]").." to be a boolean, "..typeof(data).." was given")
 		end
-		table.insert(bitTable, 1, data)
+		print('Encoded bool '..(spec.Key or "[keyless]"), data)
+		--table.insert(bitTable, 1, data)
+		bitTable[#bitTable+1] = data
 	else
 		error("luaBits serializeDataTree: invalid [Type] field given for "..(spec.Key or "[keyless]").." must be 'Integer', 'Boolean', or 'Table'")
 	end
