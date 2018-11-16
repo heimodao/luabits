@@ -59,7 +59,8 @@ function LuaBits.SerializeBitTable(bitTable, forDatastore)
 		serialization instead.
 		https://devforum.roblox.com/t/text-compression/163637/6
 	 ]]
-	local charValue = 0
+	 -- Start at 1 to avoid null character
+	local charValue = 1
 	local bitPosition = 1
 	local compressedStringTable = {}
 	for i = 1, #bitTable do
@@ -105,7 +106,7 @@ function LuaBits.DeserializeBitTable(bitString, forDatastore, padding)
 	local numberBits = forDatastore and 6 or 8
 	local bits = {}
 	for char in string.gmatch(bitString, ".") do
-		local integer = string.byte(char)
+		local integer = string.byte(char) - 1 -- Subtract 1 right away (see line 62)
 		if forDatastore and integer >= 93 then
 			integer = integer - 1 - 35
 			-- We do this, because if the serialized integer is 92 or greater, it is
