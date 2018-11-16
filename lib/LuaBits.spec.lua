@@ -1,3 +1,35 @@
+local indent = "    "
+local function prettyPrint(value, indentLevel)
+	indentLevel = indentLevel or 0
+	local output = {}
+
+	if typeof(value) == "table" then
+		table.insert(output, "{\n")
+
+		for key, value in pairs(value) do
+			table.insert(output, indent:rep(indentLevel + 1))
+			table.insert(output, tostring(key))
+			table.insert(output, " = ")
+
+			table.insert(output, prettyPrint(value, indentLevel + 1))
+			table.insert(output, "\n")
+		end
+
+		table.insert(output, indent:rep(indentLevel))
+		table.insert(output, "}")
+	elseif typeof(value) == "string" then
+		table.insert(output, string.format("%q", value))
+		table.insert(output, " (string)")
+	else
+		table.insert(output, tostring(value))
+		table.insert(output, " (")
+		table.insert(output, typeof(value))
+		table.insert(output, ")")
+	end
+
+	return table.concat(output, "")
+end
+
 local function deepEqual(table1, table2)
 	for ind, value in pairs(table1) do
 		if typeof(value) == "table" then
@@ -79,6 +111,9 @@ return function()
 	it("should encode and decode complex data structures according to specs", function()
 		local bitTable = LuaBits.DataTreeToBitTable(voxelData.data, voxelData.spec, voxelData.callbacks)
 		local dataTree = LuaBits.BitTableToDataTree(bitTable, voxelData.spec, voxelData.callbacks)
+		print(prettyPrint(voxelData.data))
+		print("---------------")
+		print(prettyPrint(dataTree))
 		expect(deepEqual(voxelData.data, dataTree)).to.equal(true)
 
 		-- 8 bit compression
