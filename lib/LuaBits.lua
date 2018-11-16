@@ -131,7 +131,7 @@ function LuaBits.DeserializeBitTable(bitString, forDatastore, padding)
 		end
 	end
 	if padding then
-		for i = #bits, #bits-padding do
+		for i = #bits, #bits-padding, -1 do
 			bits[i] = nil
 		end
 	end
