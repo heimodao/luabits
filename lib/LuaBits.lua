@@ -64,7 +64,7 @@ function LuaBits.SerializeBitTable(bitTable, forDatastore)
 	local compressedStringTable = {}
 	for i = 1, #bitTable do
 		local bit = bitTable[i]
-		if bit == "1" then
+		if bit == true then
 			charValue = charValue + 2^(charSize-bitPosition)
 		end
 		if bitPosition == charSize then
