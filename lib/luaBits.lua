@@ -6,50 +6,48 @@
 
 local NAT_LOG_2 = math.log(2)
 
--- Returns the number of bits needed to represent an integer in binary format.
---[[local function bitsToRepresentInt(integer)
-	integer = math.floor(integer)
-	local bits = math.ceil(math.log(integer+1)/NAT_LOG_2)
-	return math.log(integer)/NAT_LOG_2, bits, (2^bits)-1
-end]]
+local LuaBits = {}
 
-local function bitsToRepresentInt(integer)
+-- Returns the number of bits needed to represent an integer in binary format.
+
+function LuaBits.NumberBitsToRepresentInt(integer)
 	integer = math.floor(integer)
 	return math.ceil(math.log(integer+1)/NAT_LOG_2)
 end
 
 -- Converts an integer into a sequence of bits, stored as a string
-local function integerToBitString(integer, bits)
+function LuaBits.IntegerToBitTable(integer, bits)
 	if not bits then
-		bits = bitsToRepresentInt(integer)
+		bits = LuaBits.NumberBitsToRepresentInt(integer)
 	end
-	local bitString = ""
+	local bitTable = {}
 	for i = bits, 1, -1 do
 		local bitNumber = 2^(i-1)
 		if integer >= bitNumber then
-			bitString = bitString.."1"
+			bitTable[#bitTable+1] = true
 			integer = integer - bitNumber
 		else
-			bitString = bitString.."0"
+			bitTable[#bitTable+1] = false
 		end
 	end
-	return bitString
+	return bitTable
 end
 
 -- Converts a sequence of bits back into an integer
-local function bitStringToInteger(bitString)
+function LuaBits.BitTableToInteger(bitTable)
 	local value = 0
-	local length = string.len(bitString)
-	for bit in string.gmatch(bitString, ".") do
+	local length = #bitTable
+	for i = 1, #bitTable do
 		length = length - 1
-		if bit == "1" then
+		local bit = bitTable[i]
+		if bit == true then
 			value = value + 2^length
 		end
 	end
 	return value
 end
 
-local function compressBitString(bitString, forDatastore)
+function LuaBits.SerializeBitTable(bitTable, forDatastore)
 	local charSize = forDatastore and 6 or 8
 	 --[[
 		 When serializing for DataStores, we can only encoded ASCII characters between
@@ -63,8 +61,9 @@ local function compressBitString(bitString, forDatastore)
 	 ]]
 	local charValue = 0
 	local bitPosition = 1
-	local compressedString = ""
-	for bit in string.gmatch(bitString, ".") do
+	local compressedStringTable = {}
+	for i = 1, #bitTable do
+		local bit = bitTable[i]
 		if bit == "1" then
 			charValue = charValue + 2^(charSize-bitPosition)
 		end
@@ -79,7 +78,7 @@ local function compressBitString(bitString, forDatastore)
 					charValue = charValue + 1
 				end
 			end
-			compressedString = compressedString..string.char(charValue)
+			compressedStringTable[#compressedStringTable] = string.char(charValue)
 			charValue = 0
 			bitPosition = 1
 		else
@@ -94,15 +93,15 @@ local function compressBitString(bitString, forDatastore)
 			end
 		end
 		local remainingBits = charSize - (bitPosition - 1)
-		compressedString = compressedString..string.char(charValue)
-		return compressedString, remainingBits
+		compressedStringTable[#compressedStringTable] = string.char(charValue)
+		return compressedStringTable, remainingBits
 	end
-	return compressedString, nil
+	return compressedStringTable, nil
 end
 
-local function decompressBitString(bitString, forDatastore, padding)
+function LuaBits.DeserializeBitTable(bitString, forDatastore, padding)
 	local numberBits = forDatastore and 6 or 8
-	local bits = ""
+	local bits = {}
 	for char in string.gmatch(bitString, ".") do
 		local integer = string.byte(char)
 		if forDatastore and integer >= 93 then
@@ -110,20 +109,23 @@ local function decompressBitString(bitString, forDatastore, padding)
 			-- We do this, because if the serialized integer is 92 or greater, it is
 			-- stored as 1 greater than its actual value in order to skip ASCII character
 			-- 92. (see above comments)
-			elseif forDatastore then
-				integer = integer - 35
-			end
-		bits = bits..integerToBitString(integer, numberBits)
+		elseif forDatastore then
+			integer = integer - 35
+		end
+		local bitTable = LuaBits.IntegerToBitTable(integer, numberBits)
+		for i = 1, numberBits do
+			bits[#bits+1] = bitTable
+		end
 	end
 	if padding then
-		return bits:sub(1, bits:len()-padding)
-	else
-		return bits
+		for i = #bits, #bits-padding do
+			bits[i] = nil
+		end
 	end
 end
 
-local function serializeDataTree(data, spec, sizeCallbacks, rootData)
-	local bitString = ""
+function LuaBits.DataTreeToBitTable(data, spec, sizeCallbacks, rootData, bitTable)
+	bitTable = bitTable or {}
 	if spec.Type == "Table" then
 		print('encoding table '..(spec.Key or "[keyless]"))
 		if not typeof(data) == "table" then
@@ -138,12 +140,12 @@ local function serializeDataTree(data, spec, sizeCallbacks, rootData)
 					if not repeatVal then
 						error("luaBits serializeDataTree: expected index ["..i.."] in table "..(value.Key or "[keyless]"))
 					end
-					bitString = bitString .. serializeDataTree(repeatVal, value, sizeCallbacks, rootData or data)
+					LuaBits.DataTreeToBitTable(repeatVal, value, sizeCallbacks, rootData or data, bitTable)
 				end
 				repeatedVals = repeatedVals + value.Repeat
 			elseif value.RepeatToEnd then
 				for i = repeatedVals+1, #data do
-					bitString = bitString .. serializeDataTree(data[i], value, sizeCallbacks, rootData or data)
+					LuaBits.DataTreeToBitTable(data[i], value, sizeCallbacks, rootData or data, bitTable)
 				end
 			else
 				local subData do
@@ -159,10 +161,10 @@ local function serializeDataTree(data, spec, sizeCallbacks, rootData)
 						end
 					end
 				end
-				bitString = bitString .. serializeDataTree(subData, value, sizeCallbacks, rootData or data)
+				LuaBits.DataTreeToBitTable(subData, value, sizeCallbacks, rootData or data, bitTable)
 			end
 		end
-		return bitString
+		return bitTable
 	elseif spec.Type == "Integer" then
 		print('encoding int '..(spec.Key or "[keyless]"))
 		if not typeof(data) == "number" then
@@ -195,19 +197,22 @@ local function serializeDataTree(data, spec, sizeCallbacks, rootData)
 				error("LuaBits deserializeBitString: Incorrect size given for int value ".. (spec.Key or "[keyless]") ..", must be callback string or integer")
 			end
 		end
-		return integerToBitString(data, intSize)
+		local integerBits = LuaBits.IntegerToBitTable(data, intSize)
+		for i = 1, intSize do
+			table.insert(bitTable, i, integerBits[i])
+		end
 	elseif spec.Type == "Boolean" then
 		print('encoding bool '..(spec.Key or "[keyless]"))
 		if not typeof(data) == "boolean" then
 			error("luaBits serializeDataTree: expected data "..(spec.Key or "[keyless]").." to be a boolean, "..typeof(data).." was given")
 		end
-		return (data and "1" or "0")
+		table.insert(bitTable, 1, data)
 	else
 		error("luaBits serializeDataTree: invalid [Type] field given for "..(spec.Key or "[keyless]").." must be 'Integer', 'Boolean', or 'Table'")
 	end
 end
 
-local function deserializeBitString(bitString, spec, sizeCallbacks, container, root, position)
+function LuaBits.BitTableToDataTree(bitTable, spec, sizeCallbacks, container, root, position)
 	position = position or 1
 	if spec.Type == "Table" then
 		local thisTable = {}
@@ -224,14 +229,14 @@ local function deserializeBitString(bitString, spec, sizeCallbacks, container, r
 			local value = spec.Values[i]
 			if value.Repeat then
 				for _ = 1, value.Repeat do
-					position = deserializeBitString(bitString, value, sizeCallbacks, thisTable, root, position)
+					position = LuaBits.BitTableToDataTree(bitTable, value, sizeCallbacks, thisTable, root, position)
 				end
 			elseif value.RepeatToEnd then
 				repeat
-					position = deserializeBitString(bitString, value, sizeCallbacks, thisTable, root, position)
-				until position >= bitString:len()
+					position = LuaBits.BitTableToDataTree(bitTable, value, sizeCallbacks, thisTable, root, position)
+				until position >= #bitTable
 			else
-				position = deserializeBitString(bitString, value, sizeCallbacks, thisTable, root, position)
+				position = LuaBits.BitTableToDataTree(bitTable, value, sizeCallbacks, thisTable, root, position)
 			end
 		end
 		if thisTable ~= root then
@@ -264,29 +269,21 @@ local function deserializeBitString(bitString, spec, sizeCallbacks, container, r
 				else
 					error("LuaBits deserializeBitString: Incorrect size given for int value ''".. (spec.Key or "[keyless]") .."', must be callback string or integer")
 				end
-				local integerBits = string.sub(bitString, position, position+intSize-1)
-				container[spec.Key or #container+1] = bitStringToInteger(integerBits)
+				local integerBits = {}
+				for i = position, position+intSize-1 do
+					integerBits[#integerBits+1] = bitTable[i]
+				end
+				container[spec.Key or #container+1] = LuaBits.BitTableToInteger(integerBits)
 				return position + intSize
 			end
 		else
 			error("LuaBits deserializeBitString: No or size given for int value ".. (spec.Key or "[keyless]"))
 		end
 	elseif spec.Type == "Boolean" then
-		local bit = string.sub(bitString, position, position)
-		local value = bit == "1"
-		container[spec.Key or #table+1] = value
+		local bit = bitTable[position]
+		container[spec.Key or #table+1] = bit
 		return position + 1
 	end
 end
 
-local luaBits = {
-	bitsToRepresentInt   = bitsToRepresentInt;
-	integerToBitString   = integerToBitString;
-	bitStringToInteger   = bitStringToInteger;
-	compressBitString    = compressBitString;
-	decompressBitString  = decompressBitString;
-	deserializeBitString = deserializeBitString;
-	serializeDataTree    = serializeDataTree;
-}
-
-return luaBits
+return LuaBits
