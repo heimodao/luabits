@@ -15,6 +15,13 @@ function LuaBits.NumberBitsToRepresentInt(integer)
 	return math.ceil(math.log(integer+1)/NAT_LOG_2)
 end
 
+function LuaBits.ConvertBitTableToString(bitTable)
+	local str = ""
+	for _, v in ipairs(bitTable) do
+		str = str..v and "1" or "0"
+	end
+end
+
 -- Converts an integer into a sequence of bits, stored as a string
 function LuaBits.IntegerToBitTable(integer, bits)
 	if not bits then
