@@ -238,13 +238,13 @@ local LuaBits = require(script.Parent.LuaBits)
 
 local sizeCallbacks = {
 	['SizeX'] = function(data)
-		return LuaBits.bitsToRepresentInt(data.MapSize.X)
+		return LuaBits.NumberBitsToRepresentInt(data.MapSize.X)
 	end;
 	['SizeY'] = function(data)
-		return LuaBits.bitsToRepresentInt(data.MapSize.Y)
+		return LuaBits.NumberBitsToRepresentInt(data.MapSize.Y)
 	end;
 	['SizeZ'] = function(data)
-		return LuaBits.bitsToRepresentInt(data.MapSize.Z)
+		return LuaBits.NumberBitsToRepresentInt(data.MapSize.Z)
 	end;
 }
 
