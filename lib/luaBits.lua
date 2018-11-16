@@ -50,14 +50,14 @@ end
 function LuaBits.SerializeBitTable(bitTable, forDatastore)
 	local charSize = forDatastore and 6 or 8
 	 --[[
-		 When serializing for DataStores, we can only encoded ASCII characters between
-		 the values 0-127. Because of quirks with how JSON encodes certain control
-		 characters, 36 of those characters use up to 6 characters in the datastore to
-		 encode a single character, meaning 7 bits have the potential to take up to 42
-		 bits of space. Thus, it turns out that it's more efficient to forgo 7-bit
-		 serialization into all valid 128 ASCII character and use only 6-bit
-		 serialization instead.
-		 https://devforum.roblox.com/t/text-compression/163637/6
+		When serializing for DataStores, we can only encoded ASCII characters between
+		the values 0-127. Because of quirks with how JSON encodes certain control
+		characters, 36 of those characters use up to 6 characters in the datastore to
+		encode a single character, meaning 7 bits have the potential to take up to 42
+		bits of space. Thus, it turns out that it's more efficient to forgo 7-bit
+		serialization into all valid 128 ASCII character and use only 6-bit
+		serialization instead.
+		https://devforum.roblox.com/t/text-compression/163637/6
 	 ]]
 	local charValue = 0
 	local bitPosition = 1
@@ -78,13 +78,14 @@ function LuaBits.SerializeBitTable(bitTable, forDatastore)
 					charValue = charValue + 1
 				end
 			end
-			compressedStringTable[#compressedStringTable] = string.char(charValue)
+			compressedStringTable[#compressedStringTable+1] = string.char(charValue)
 			charValue = 0
 			bitPosition = 1
 		else
 			bitPosition = bitPosition + 1
 		end
 	end
+	local remainingBits
 	if bitPosition > 1 then
 		if forDatastore then
 			charValue = charValue + 35
@@ -92,11 +93,10 @@ function LuaBits.SerializeBitTable(bitTable, forDatastore)
 				charValue = charValue + 1
 			end
 		end
-		local remainingBits = charSize - (bitPosition - 1)
-		compressedStringTable[#compressedStringTable] = string.char(charValue)
-		return compressedStringTable, remainingBits
+		remainingBits = charSize - (bitPosition - 1)
+		compressedStringTable[#compressedStringTable+1] = string.char(charValue)
 	end
-	return compressedStringTable, nil
+	return table.concat(compressedStringTable), remainingBits
 end
 
 function LuaBits.DeserializeBitTable(bitString, forDatastore, padding)
