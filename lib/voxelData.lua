@@ -234,7 +234,7 @@ local voxelData = {
 	}
 }
 
-local LuaBits = require(script.Parent.LuaBits)
+local LuaBits = require(script.LuaBits)
 
 local sizeCallbacks = {
 	['SizeX'] = function(data)

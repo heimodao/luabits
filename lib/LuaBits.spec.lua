@@ -11,7 +11,7 @@ local function deepEqual(table1, table2)
 	return true
 end
 return function()
-	local LuaBits = require(script.Parent.LuaBits)
+	local LuaBits = require(script.Parent)
 
 	it("should give number of bits needed for integers", function()
 		local bits = LuaBits.NumberBitsToRepresentInt(1)
