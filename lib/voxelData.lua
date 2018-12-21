@@ -1,44 +1,46 @@
+local LuaBits = require(script.LuaBits)
+
 local voxelSpec = {
 	['Key']    = "Root";
-	['Type']   = "Table";
+	['Type']   = LuaBits.DataTypes.TABLE;
 	['Values'] = {
 		{
 			['Key']       = "MapSize";
-			['Type']      = "Table";
+			['Type']      = LuaBits.DataTypes.TABLE;
 			['Values']    = {
 				{
 					['Key']  = "X";
-					['Type'] = "Integer";
+					['Type'] = LuaBits.DataTypes.INT;
 					['Size'] = 12;
 				};{
 					['Key']  = "Y";
-					['Type'] = "Integer";
+					['Type'] = LuaBits.DataTypes.INT;
 					['Size'] = 12;
 				};{
 					['Key']  = "Z";
-					['Type'] = "Integer";
+					['Type'] = LuaBits.DataTypes.INT;
 					['Size'] = 12;
 				};
 			}
 		};{
 			['Key']    = "Pallette";
-			['Type']   = "Table";
+			['Type']   = LuaBits.DataTypes.TABLE;
 			['Values'] = {
 				{
-					['Type']   = "Table";
+					['Type']   = LuaBits.DataTypes.TABLE;
 					['Repeat'] = 16;
 					['Values'] = {
 						{
 							['Key']  = "R";
-							['Type'] = "Integer";
+							['Type'] = LuaBits.DataTypes.INT;
 							['Size'] = 8;
 						};{
 							['Key']  = "G";
-							['Type'] = "Integer";
+							['Type'] = LuaBits.DataTypes.INT;
 							['Size'] = 8;
 						};{
 							['Key']  = "B";
-							['Type'] = "Integer";
+							['Type'] = LuaBits.DataTypes.INT;
 							['Size'] = 8;
 						};
 					}
@@ -46,62 +48,62 @@ local voxelSpec = {
 			}
 		};{
 			['Key']    = "Voxels";
-			['Type']   = "Table";
+			['Type']   = LuaBits.DataTypes.TABLE;
 			['Values'] = {
 				{
-					['Type']        = "Table";
+					['Type']        = LuaBits.DataTypes.TABLE;
 					['RepeatToEnd'] = true;
 					['Values']      = {
 						{
 							['Key']    = "StartPosition";
-							['Type']   = "Table";
+							['Type']   = LuaBits.DataTypes.TABLE;
 							['Values'] = {
 								{
 									['Key']  = "X";
-									['Type'] = "Integer";
+									['Type'] = LuaBits.DataTypes.INT;
 									['Size'] = "SizeX";
 								};{
 									['Key']  = "Y";
-									['Type'] = "Integer";
+									['Type'] = LuaBits.DataTypes.INT;
 									['Size'] = "SizeY";
 								};{
 									['Key']  = "Z";
-									['Type'] = "Integer";
+									['Type'] = LuaBits.DataTypes.INT;
 									['Size'] = "SizeZ";
 								}
 							}
 						};{
 							['Key']    = "EndPosition";
-							['Type']   = "Table";
+							['Type']   = LuaBits.DataTypes.TABLE;
 							['Values'] = {
 								{
 									['Key']  = "X";
-									['Type'] = "Integer";
+									['Type'] = LuaBits.DataTypes.INT;
 									['Size'] = "SizeX";
 								};{
 									['Key']  = "Y";
-									['Type'] = "Integer";
+									['Type'] = LuaBits.DataTypes.INT;
 									['Size'] = "SizeY";
 								};{
 									['Key']  = "Z";
-									['Type'] = "Integer";
+									['Type'] = LuaBits.DataTypes.INT;
 									['Size'] = "SizeZ";
 								}
 							}
 						};{
 							['Key']  = "Color";
-							['Type'] = "Integer";
+							['Type'] = LuaBits.DataTypes.INT;
 							['Size'] = 4;
 						};{
 							['Key']  = "Material";
-							['Type'] = "Integer";
+							['Type'] = LuaBits.DataTypes.INT;
 							['Size'] = 2;
 						};{
 							['Key']  = "IsBreakable";
-							['Type'] = "Boolean";
+							['Type'] = LuaBits.DataTypes.BOOL;
 						};{
 							['Key']  = "HasGravity";
-							['Type'] = "Boolean";
+							['Type'] = LuaBits.DataTypes.BOOL;
 						}
 					}
 				}
@@ -233,8 +235,6 @@ local voxelData = {
 		};
 	}
 }
-
-local LuaBits = require(script.LuaBits)
 
 local sizeCallbacks = {
 	['SizeX'] = function(data)

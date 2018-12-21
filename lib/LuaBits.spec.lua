@@ -42,6 +42,16 @@ return function()
 		expect(integer).to.equal(145)
 	end)
 
+	it("should encode and decode signed integers", function()
+		local bitTable = LuaBits.SignedIntegerToBitTable(145)
+		local integer = LuaBits.SignedIntegerToBitTable(bitTable)
+		expect(integer).to.equal(145)
+
+		bitTable = LuaBits.SignedIntegerToBitTable(-145)
+		integer = LuaBits.SignedIntegerToBitTable(bitTable)
+		expect(integer).to.equal(-145)
+	end)
+
 	it("should compress and decompress 8 bit data", function()
 		local bitTable = LuaBits.IntegerToBitTable(145, 8)
 		local serializedBitTable, padding = LuaBits.SerializeBitTable(bitTable)
