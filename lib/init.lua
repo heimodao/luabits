@@ -49,14 +49,16 @@ function LuaBits.IntegerToBitTable(integer, bits)
 end
 
 function LuaBits.SignedIntegerToBitTable(integer, bits)
-	bits = bits or LuaBits.NumberBitsToRepresentInt(integer)
 	local bitTable = {}
 	if integer ~= 0 then
 		bitTable[1] = (integer/math.abs(integer)) == -1 and false or true
 	else
 		bitTable[1] = true
 	end
+
 	integer = math.abs(integer)
+	bits = bits or LuaBits.NumberBitsToRepresentInt(integer)
+	print("integer is", integer)
 	for i = bits, 1, -1 do
 		local bitNumber = 2^(i-1)
 		if integer >= bitNumber then
