@@ -90,7 +90,7 @@ function LuaBits.BitTableToSignedInteger(bitTable)
 	local length = #bitTable
 	for i = 2, #bitTable do
 		length = length - 1
-		local bit = bitTable[i]
+		local bit = bitTable[i-1]
 		if bit == true then
 			value = value + 2^length
 		end
