@@ -84,16 +84,9 @@ function LuaBits.BitTableToInteger(bitTable)
 end
 
 function LuaBits.BitTableToSignedInteger(bitTable)
-	local value = 0
-	local length = #bitTable-1
-	for i = 2, #bitTable do
-		length = length - 1
-		local bit = bitTable[i]
-		if bit == true then
-			value = value + 2^length
-		end
-	end
 	local sign = (bitTable[1] == true) and 1 or -1
+	bitTable = table.remove(bitTable, 1)
+	local value = LuaBits.BitTableToInteger(bitTable)
 	return sign * value
 end
 
