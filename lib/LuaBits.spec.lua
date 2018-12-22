@@ -80,23 +80,23 @@ return function()
 		expect(integer).to.equal(1000)
 	end)
 
-	local voxelData = require(script.Parent.voxelData)
+	local VoxelData = require(script.Parent.VoxelData)
 
 	it("should encode and decode complex data structures according to specs", function()
-		local bitTable = LuaBits.DataTreeToBitTable(voxelData.data, voxelData.spec, voxelData.callbacks)
-		local dataTree = LuaBits.BitTableToDataTree(bitTable, voxelData.spec, voxelData.callbacks)
-		expect(deepEqual(voxelData.data, dataTree)).to.equal(true)
+		local bitTable = LuaBits.DataTreeToBitTable(VoxelData.data, VoxelData.spec, VoxelData.callbacks)
+		local dataTree = LuaBits.BitTableToDataTree(bitTable, VoxelData.spec, VoxelData.callbacks)
+		expect(deepEqual(VoxelData.data, dataTree)).to.equal(true)
 
 		-- 8 bit compression
 		local serializedBitTable, padding = LuaBits.SerializeBitTable(bitTable)
 		local deserializedBitTable = LuaBits.DeserializeBitTable(serializedBitTable, false, padding)
-		dataTree = LuaBits.BitTableToDataTree(deserializedBitTable, voxelData.spec, voxelData.callbacks)
-		expect(deepEqual(voxelData.data, dataTree)).to.equal(true)
+		dataTree = LuaBits.BitTableToDataTree(deserializedBitTable, VoxelData.spec, VoxelData.callbacks)
+		expect(deepEqual(VoxelData.data, dataTree)).to.equal(true)
 
 		-- 6 bit compression (datastore)
 		serializedBitTable, padding = LuaBits.SerializeBitTable(bitTable, true)
 		deserializedBitTable = LuaBits.DeserializeBitTable(serializedBitTable, true, padding)
-		dataTree = LuaBits.BitTableToDataTree(deserializedBitTable, voxelData.spec, voxelData.callbacks)
-		expect(deepEqual(voxelData.data, dataTree)).to.equal(true)
+		dataTree = LuaBits.BitTableToDataTree(deserializedBitTable, VoxelData.spec, VoxelData.callbacks)
+		expect(deepEqual(VoxelData.data, dataTree)).to.equal(true)
 	end)
 end

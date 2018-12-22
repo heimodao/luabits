@@ -1,4 +1,4 @@
-local LuaBits = require(script.LuaBits)
+local LuaBits = require(script.Parent)
 
 local voxelSpec = {
 	['Key']    = "Root";
