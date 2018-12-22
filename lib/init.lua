@@ -85,7 +85,7 @@ end
 
 function LuaBits.BitTableToSignedInteger(bitTable)
 	local sign = (bitTable[1] == true) and 1 or -1
-	bitTable = table.remove(bitTable, 1)
+	table.remove(bitTable, 1)
 	local value = LuaBits.BitTableToInteger(bitTable)
 	return sign * value
 end
