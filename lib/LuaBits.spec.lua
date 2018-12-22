@@ -44,7 +44,7 @@ return function()
 
 	it("should encode and decode signed integers", function()
 		local bitTable = LuaBits.SignedIntegerToBitTable(145)
-		local integer = LuaBits.SignedIntegerToBitTable(bitTable)
+		local integer = LuaBits.BitTableToSignedInteger(bitTable)
 		expect(integer).to.equal(145)
 
 		bitTable = LuaBits.SignedIntegerToBitTable(-145)
