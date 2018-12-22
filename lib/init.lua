@@ -53,7 +53,11 @@ function LuaBits.SignedIntegerToBitTable(integer, bits)
 		bits = LuaBits.NumberBitsToRepresentInt(integer) + 1
 	end
 	local bitTable = {}
-	bitTable[1] = math.sign(integer) == -1 and 0 or 1
+	if integer ~= 0 then
+		bitTable[1] = (integer/math.abs(integer)) == -1 and 0 or 1
+	else
+		bitTable[1] = 1
+	end
 	integer = math.abs(integer)
 	for i = bits, 1, -1 do
 		local bitNumber = 2^(i-1)
@@ -91,7 +95,7 @@ function LuaBits.BitTableToSignedInteger(bitTable)
 			value = value + 2^length
 		end
 	end
-	local sign = math.sign(bitTable[1])
+	local sign = (bitTable[1] == 1) and 1 or -1
 	return sign * value
 end
 
