@@ -51,7 +51,7 @@ end
 function LuaBits.SignedIntegerToBitTable(integer, bits)
 	local bitTable = {}
 	if integer ~= 0 then
-		bitTable[1] = (integer/math.abs(integer)) == -1 and false or true
+		bitTable[1] = (integer/math.abs(integer)) == 1 and true or false
 	else
 		bitTable[1] = true
 	end
