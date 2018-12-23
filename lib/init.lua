@@ -327,7 +327,9 @@ function LuaBits.BitTableToDataTree(bitTable, spec, sizeCallbacks, container, ro
 				if spec.Type == LuaBits.DataTypes.INT then
 					intValue = LuaBits.BitTableToInteger(integerBits)
 				else
+					print("decoding signed int")
 					intValue = LuaBits.BitTableToSignedInteger(integerBits)
+					print("decoded value is", value)
 				end
 			end
 			container[spec.Key or #container+1] = intValue
