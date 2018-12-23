@@ -65,7 +65,6 @@ function LuaBits.SignedIntegerToBitTable(integer, bits)
 			bitTable[#bitTable+1] = false
 		end
 	end
-	print("converted", integer, "to", LuaBits.ConvertBitTableToString(bitTable))
 	return bitTable
 end
 
@@ -87,7 +86,6 @@ function LuaBits.BitTableToSignedInteger(bitTable)
 	local sign = (bitTable[1] == true) and 1 or -1
 	table.remove(bitTable, 1)
 	local value = LuaBits.BitTableToInteger(bitTable)
-	print("converted", LuaBits.ConvertBitTableToString(bitTable), "to", sign * value)
 	return sign * value
 end
 
@@ -329,10 +327,7 @@ function LuaBits.BitTableToDataTree(bitTable, spec, sizeCallbacks, container, ro
 				if spec.Type == LuaBits.DataTypes.INT then
 					intValue = LuaBits.BitTableToInteger(integerBits)
 				else
-					print("int size is", intSize)
-					print("decoding signed int")
 					intValue = LuaBits.BitTableToSignedInteger(integerBits)
-					print("decoded value is", intValue)
 				end
 			end
 			container[spec.Key or #container+1] = intValue
