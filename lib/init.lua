@@ -265,7 +265,7 @@ end
 
 function LuaBits.BitTableToDataTree(bitTable, spec, sizeCallbacks, container, root, position)
 	position = position or 1
-	if spec.Type == "Table" then
+	if spec.Type == LuaBits.DataTypes.TABLE then
 		local thisTable = {}
 		if not root then
 			root = thisTable
@@ -295,38 +295,43 @@ function LuaBits.BitTableToDataTree(bitTable, spec, sizeCallbacks, container, ro
 		else
 			return root
 		end
-	elseif spec.Type == "Integer" then
+	elseif spec.Type == LuaBits.DataTypes.INT or spec.Type == LuaBits.DataTypes.SIGNED_INT then
 		if spec.Size then
-			local intSize do
-				if typeof(spec.Size) == "number" then
-					intSize = spec.Size
-				elseif typeof(spec.Size) == "string" then
-					if not sizeCallbacks then
-						error("LuaBits deserializeBitString: Callbacks table is undefined")
-					end
-					local callback = sizeCallbacks[spec.Size]
-					if callback then
-						if typeof(callback) == "function" then
-							intSize = callback(root)
-							sizeCallbacks[spec.Size] = intSize
-						elseif typeof(callback) == "number" then
-							intSize = callback
-						else
-							error("LuaBits deserializeBitString: Incorrect type given for callback ''"..spec.Size.. "', Value must be a function")
-						end
+			if typeof(spec.Size) == "number" then
+				intSize = spec.Size
+			elseif typeof(spec.Size) == "string" then
+				if not sizeCallbacks then
+					error("LuaBits deserializeBitString: Callbacks table is undefined")
+				end
+				local callback = sizeCallbacks[spec.Size]
+				if callback then
+					if typeof(callback) == "function" then
+						intSize = callback(root)
+						sizeCallbacks[spec.Size] = intSize
+					elseif typeof(callback) == "number" then
+						intSize = callback
 					else
-						error("LuaBits deserializeBitString: Callback '"..spec.Size.."' is undefined.")
+						error("LuaBits deserializeBitString: Incorrect type given for callback ''"..spec.Size.. "', Value must be a function")
 					end
 				else
-					error("LuaBits deserializeBitString: Incorrect size given for int value ''".. (spec.Key or "[keyless]") .."', must be callback string or integer")
+					error("LuaBits deserializeBitString: Callback '"..spec.Size.."' is undefined.")
 				end
-				local integerBits = {}
-				for i = position, position+intSize-1 do
-					integerBits[#integerBits+1] = bitTable[i]
-				end
-				container[spec.Key or #container+1] = LuaBits.BitTableToInteger(integerBits)
-				return position + intSize
+			else
+				error("LuaBits deserializeBitString: Incorrect size given for int value ''".. (spec.Key or "[keyless]") .."', must be callback string or integer")
 			end
+			local integerBits = {}
+			for i = position, position+intSize-1 do
+				integerBits[#integerBits+1] = bitTable[i]
+			end
+			local intValue do
+				if spec.Type == LuaBits.DataTypes.INT then
+					intValue = LuaBits.BitTableToInteger(integerBits)
+				else
+					intValue = LuaBits.BitTableToSignedInteger(integerBits)
+				end
+			end
+			container[spec.Key or #container+1] = intValue
+			return position + intSize
 		else
 			error("LuaBits deserializeBitString: No or size given for int value ".. (spec.Key or "[keyless]"))
 		end

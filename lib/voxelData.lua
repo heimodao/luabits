@@ -96,8 +96,8 @@ local voxelSpec = {
 							['Size'] = 4;
 						};{
 							['Key']  = "Material";
-							['Type'] = LuaBits.DataTypes.INT;
-							['Size'] = 2;
+							['Type'] = LuaBits.DataTypes.SIGNED_INT;
+							['Size'] = 3;
 						};{
 							['Key']  = "IsBreakable";
 							['Type'] = LuaBits.DataTypes.BOOL;
