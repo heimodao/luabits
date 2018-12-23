@@ -32,9 +32,7 @@ end
 
 -- Converts an integer into a sequence of bits, stored as a string
 function LuaBits.IntegerToBitTable(integer, bits)
-	if not bits then
-		bits = LuaBits.NumberBitsToRepresentInt(integer)
-	end
+	bits = bits or LuaBits.NumberBitsToRepresentInt(integer)
 	local bitTable = {}
 	for i = bits, 1, -1 do
 		local bitNumber = 2^(i-1)
@@ -57,8 +55,7 @@ function LuaBits.SignedIntegerToBitTable(integer, bits)
 	end
 
 	integer = math.abs(integer)
-	bits = bits or LuaBits.NumberBitsToRepresentInt(integer)
-	print("integer is", integer)
+	bits = bits and bits-1 or LuaBits.NumberBitsToRepresentInt(integer)
 	for i = bits, 1, -1 do
 		local bitNumber = 2^(i-1)
 		if integer >= bitNumber then
@@ -68,6 +65,7 @@ function LuaBits.SignedIntegerToBitTable(integer, bits)
 			bitTable[#bitTable+1] = false
 		end
 	end
+	print("converted", integer, "to", LuaBits.ConvertBitTableToString(bitTable))
 	return bitTable
 end
 
@@ -89,6 +87,7 @@ function LuaBits.BitTableToSignedInteger(bitTable)
 	local sign = (bitTable[1] == true) and 1 or -1
 	table.remove(bitTable, 1)
 	local value = LuaBits.BitTableToInteger(bitTable)
+	print("converted", LuaBits.ConvertBitTableToString(bitTable), "to", sign * value)
 	return sign * value
 end
 
@@ -297,28 +296,31 @@ function LuaBits.BitTableToDataTree(bitTable, spec, sizeCallbacks, container, ro
 		end
 	elseif spec.Type == LuaBits.DataTypes.INT or spec.Type == LuaBits.DataTypes.SIGNED_INT then
 		if spec.Size then
-			if typeof(spec.Size) == "number" then
-				intSize = spec.Size
-			elseif typeof(spec.Size) == "string" then
-				if not sizeCallbacks then
-					error("LuaBits deserializeBitString: Callbacks table is undefined")
-				end
-				local callback = sizeCallbacks[spec.Size]
-				if callback then
-					if typeof(callback) == "function" then
-						intSize = callback(root)
-						sizeCallbacks[spec.Size] = intSize
-					elseif typeof(callback) == "number" then
-						intSize = callback
+			local intSize do
+				if typeof(spec.Size) == "number" then
+					intSize = spec.Size
+				elseif typeof(spec.Size) == "string" then
+					if not sizeCallbacks then
+						error("LuaBits deserializeBitString: Callbacks table is undefined")
+					end
+					local callback = sizeCallbacks[spec.Size]
+					if callback then
+						if typeof(callback) == "function" then
+							intSize = callback(root)
+							sizeCallbacks[spec.Size] = intSize
+						elseif typeof(callback) == "number" then
+							intSize = callback
+						else
+							error("LuaBits deserializeBitString: Incorrect type given for callback ''"..spec.Size.. "', Value must be a function")
+						end
 					else
-						error("LuaBits deserializeBitString: Incorrect type given for callback ''"..spec.Size.. "', Value must be a function")
+						error("LuaBits deserializeBitString: Callback '"..spec.Size.."' is undefined.")
 					end
 				else
-					error("LuaBits deserializeBitString: Callback '"..spec.Size.."' is undefined.")
+					error("LuaBits deserializeBitString: Incorrect size given for int value ''".. (spec.Key or "[keyless]") .."', must be callback string or integer")
 				end
-			else
-				error("LuaBits deserializeBitString: Incorrect size given for int value ''".. (spec.Key or "[keyless]") .."', must be callback string or integer")
 			end
+
 			local integerBits = {}
 			for i = position, position+intSize-1 do
 				integerBits[#integerBits+1] = bitTable[i]
@@ -327,6 +329,7 @@ function LuaBits.BitTableToDataTree(bitTable, spec, sizeCallbacks, container, ro
 				if spec.Type == LuaBits.DataTypes.INT then
 					intValue = LuaBits.BitTableToInteger(integerBits)
 				else
+					print("int size is", intSize)
 					print("decoding signed int")
 					intValue = LuaBits.BitTableToSignedInteger(integerBits)
 					print("decoded value is", intValue)
